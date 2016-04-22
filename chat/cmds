@@ -1,0 +1,55 @@
+---- -- - - ---- Commands- -------------- --- ------------
+# python manage.py shell
+# from config.celery import app
+# app.control.revoke('32ba5fe4-918c-480f-8a78-a310c11d0c3a')
+# app.control.discard_all()
+# app.control.purge()
+
++ Main:
+|    celery worker
+|    celery events
+|    celery beat
+|    celery shell
+|    celery multi
+|    celery amqp
+
++ Remote Control:
+|    celery status
+
+|    celery inspect --help
+|    celery inspect active
+|    celery inspect active_queues
+|    celery inspect clock
+|    celery inspect conf None
+|    celery inspect memdump
+|    celery inspect memsample
+|    celery inspect objgraph None
+|    celery inspect ping
+|    celery inspect registered
+|    celery inspect report
+|    celery inspect reserved
+|    celery inspect revoked
+|    celery inspect scheduled
+|    celery inspect stats
+
+|    celery control --help
+|    celery control add_consumer <queue> [exchange [type [routing_key]]]
+|    celery control autoscale [max] [min]
+|    celery control cancel_consumer <queue>
+|    celery control disable_events
+|    celery control enable_events
+|    celery control pool_grow [N=1]
+|    celery control pool_shrink [N=1]
+|    celery control rate_limit <task_name> <rate_limit> (e.g. 5/s | 5/m | 5/h)>
+|    celery control time_limit <task_name> <soft_secs> [hard_secs]
+
++ Utils:
+|    celery purge
+|    celery list
+|    celery migrate
+|    celery call
+|    celery result
+|    celery report
+
++ Extensions:
+|    celery flower

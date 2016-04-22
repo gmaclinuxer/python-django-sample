@@ -11,7 +11,11 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
+from __future__ import absolute_import
 import os
+from datetime import timedelta
+
+TIME_ZONE = 'Asia/Shanghai'
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
@@ -27,7 +31,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
 # Application definition
 
 INSTALLED_APPS = (
@@ -37,10 +40,94 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'gunicorn',
     # chat
     'chat',
 )
 
+# ===============================================================
+# # celery configuration
+INSTALLED_APPS += ("djcelery",)
+INSTALLED_APPS += ("kombu.transport.django",)
+CELERY_ALWAYS_EAGER = False  # if set True, all tasks will be executed locally by blocking until the task returns
+# # broker settings
+# BROKER_URL = 'amqp://guest:guest@localhost:5672//'
+# # list of modules to import when celery starts.
+# CELERY_IMPORTS = ('chat.tasks', )
+CELERY_TIMEZONE = TIME_ZONE
+# CELERY_ENABLE_UTC = False
+# # store schedule in the db
+CELERYBEAT_SCHEDULER = "djcelery.schedulers.DatabaseScheduler"
+# import djcelery
+# djcelery.setup_loader()
+# ===============================================================
+CELERYD_CONCURRENCY = 8
+CELERYD_MAX_TASKS_PER_CHILD = 100
+CELERY_DISABLE_RATE_LIMITS = True
+# CELERY_ANNOTATIONS = {'chat.tasks.hello_world': {'rate_limit': '1/s'}}
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_ACCEPT_CONTENT = ['json', 'yaml']
+CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
+# CELERY_TASK_SERIALIZER = 'json'
+# http://blog.csdn.net/woshiaotian/article/details/36422781
+
+# CELERY_IGNORE_RESULT = False
+# CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
+# Using the database to store task state and results.
+# CELERY_RESULT_BACKEND = 'db+scheme://root:root@locahost:3306/django_docker'
+CELERY_RESULT_BACKEND = 'amqp://guest:guest@localhost:5672//'
+# redis+socket:///path/to/redis.sock?virtual_host=db_number
+# redis://:password@hostname:port/db_number
+# CELERY_RESULT_BACKEND = "redis://localhost:6379/0"
+
+# chord used but no CELERY_RESULT_BACKEND config
+# [2016-04-22 19:17:39,536: INFO/MainProcess] Task celery.chord_unlock[c4a7ad4f-54f2-43e2-b684-0e81cc0ebb6c] retry: Retry in 1s: AttributeError("'DisabledBackend' object has no attribute '_get_task_meta_for'",)
+
+
+from celery.schedules import crontab
+
+CELERYBEAT_SCHEDULE = {
+    'first_task': {
+        'task': 'chat.tasks.hello_world',
+        'args': [1, 2, 3],
+        'kwargs': {},
+        'schedule': timedelta(seconds=90)
+    },
+    'second_task': {
+        'task': 'chat.tasks.add',
+        'args': [1, 2],
+        'schedule': crontab(hour=0, minute=1)
+    }
+}
+
+from kombu import Queue, Exchange
+
+default_exchange = Exchange(name='default', type='direct')
+direct_exchange = Exchange(name='Xdirect', type='direct')
+topic_exchange = Exchange(name='Xtopic', type='topic')
+CELERY_DEFAULT_QUEUE = 'default'  # celery -> default
+# define exchange, queue and binding
+CELERY_QUEUES = (
+    Queue('default', default_exchange, routing_key='default'),
+    Queue('QueueA', direct_exchange, routing_key='keyA'),
+    Queue('QueueB', direct_exchange, routing_key='keyB'),
+)
+# define task router, put task_A(B) to QueueA(B)
+CELERY_ROUTES = {
+    'chat.tasks.task_A': {
+        'queue': 'QueueA',
+        'routing_key': 'keyA',
+    },
+    'chat.tasks.task_B': {
+        'queue': 'QueueB',
+        'routing_key': 'keyB',
+    },
+}
+
+# celery worker -A config -E -l info -n workerA -Q QueueA
+# celery worker -A config -E -l info -n workerB -Q QueueB
+# celery worker -A config -E -l info -n workerX -Q QueueA,QueueB,default
+# ===============================================================
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -53,7 +140,6 @@ MIDDLEWARE_CLASSES = (
 )
 
 ROOT_URLCONF = 'config.urls'
-
 
 TEMPLATE_CONTEXT_PROCESSORS = (
     "django.contrib.auth.context_processors.auth",
@@ -71,7 +157,6 @@ TEMPLATE_LOADERS = (
     #     'django.template.loaders.eggs.Loader',
 )
 
-
 TEMPLATE_DIRS = (
     # Put strings here, like "/home/html/django_templates" or "C:/www/django/templates".
     # Always use forward slashes, even on Windows.
@@ -80,7 +165,6 @@ TEMPLATE_DIRS = (
 )
 
 WSGI_APPLICATION = 'config.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
@@ -93,17 +177,27 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # }
 DAO_TEST = bool(os.environ.get('DAO_TEST'))
 
+# DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': os.environ['MYSQL_INSTANCE_NAME'],
+#        'USER': os.environ['MYSQL_USERNAME'],
+#        'PASSWORD': os.environ['MYSQL_PASSWORD'],
+#        'HOST': os.environ['MYSQL_PORT_3306_TCP_ADDR'],
+#        'PORT': os.environ['MYSQL_PORT_3306_TCP_PORT']
+#    }
+# }
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': os.environ['MYSQL_INSTANCE_NAME'],
-        'USER': os.environ['MYSQL_USERNAME'],
-        'PASSWORD': os.environ['MYSQL_PASSWORD'],
-        'HOST': os.environ['MYSQL_PORT_3306_TCP_ADDR'],
-        'PORT': os.environ['MYSQL_PORT_3306_TCP_PORT']
+        'NAME': 'django_docker',
+        'USER': 'root',
+        'PASSWORD': 'root',
+        'HOST': 'localhost',
+        'PORT': 3306
     }
 }
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/
@@ -117,7 +211,6 @@ USE_I18N = True
 USE_L10N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/

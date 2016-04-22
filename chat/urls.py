@@ -1,7 +1,12 @@
-from django.conf.urls import url
+from django.conf.urls import url, patterns, include
 
-from . import views
+urlpatterns = patterns('chat.views',
+    url(r'^$', 'home', name='home'),
+    url(r'^celery/hello/$', 'celery_hello', name='celery_hello'),
+    url(r'^celery/call/(?P<task_name>\w+)/$', 'task_caller', name='task_caller'),
+)
 
-urlpatterns = [
-    url(r'^$', views.home, name='home'),
-]
+# urlpatterns += patterns('chat.views',
+#     url(r'^$', 'home', name='home'),
+#     url(r'^celery/hello$', 'celery_hello', name='celery_hello'),
+# )

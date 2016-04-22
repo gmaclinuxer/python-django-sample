@@ -1,0 +1,31 @@
+Overview
+
+group
+
+The group primitive is a signature that takes a list of tasks that should be applied in parallel.
+
+chain
+
+The chain primitive lets us link together signatures so that one is called after the other, essentially forming a chain of callbacks.
+
+chord
+
+A chord is just like a group but with a callback. A chord consists of a header group and a body, where the body is a task that should execute after all of the tasks in the header are complete.
+
+map
+
+The map primitive works like the built-in map function, but creates a temporary task where a list of arguments is applied to the task. E.g. task.map([1, 2]) results in a single task being called, applying the arguments in order to the task function so that the result is:
+
+res = [task(1), task(2)]
+starmap
+
+Works exactly like map except the arguments are applied as *args. For example add.starmap([(2, 2), (4, 4)]) results in a single task calling:
+
+res = [add(2, 2), add(4, 4)]
+chunks
+
+Chunking splits a long list of arguments into parts, e.g the operation:
+
+>>> items = zip(xrange(1000), xrange(1000))  # 1000 items
+>>> add.chunks(items, 10)
+will split the list of items into chunks of 10, resulting in 100 tasks (each processing 10 items in sequence).
