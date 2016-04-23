@@ -4,7 +4,8 @@ from .models import Item
 from .utils import render_json
 from redis import Redis
 import os
-
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_headers, vary_on_cookie
 # redis = Redis(host=os.environ['REDIS_PORT_6379_TCP_ADDR'],
 #              port=os.environ['REDIS_PORT_6379_TCP_PORT'],
 #              password=os.environ.get('REDIS_PASSWORD'))
@@ -14,7 +15,10 @@ redis = Redis(host='localhost',
 
 
 # password='redis')
-
+@cache_page(30)
+@vary_on_cookie
+# @vary_on_headers('User-Agent', 'Cookie')
+# @vary_on_headers('User-Agent')
 def home(request):
     if request.method == 'POST':
         Item.objects.create(text=request.POST['item_text'])

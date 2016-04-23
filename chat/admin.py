@@ -3,13 +3,12 @@ from django.contrib import admin
 from djcelery.models import TaskMeta, TaskSetMeta
 from chat.models import Item
 
-
 # Register your models here.
 class TaskMetaAdmin(admin.ModelAdmin):
     # fields = ('task_id', 'status', 'result', 'traceback')
     list_display = ['task_id', 'status', 'result', 'date_done', 'traceback']
     list_filter = ['date_done', 'status', 'result']
-    search_fields = ('status', 'result', 'task_id')
+    search_fields = ('task_id', 'status', 'result')
 
 class ItemAdmin(admin.ModelAdmin):
     list_display = ['text', 'date_posted']

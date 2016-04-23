@@ -216,10 +216,51 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# List of finder classes that know how to find static files in
+# various locations.
+STATICFILES_FINDERS = (
+    'django.contrib.staticfiles.finders.FileSystemFinder',
+    'django.contrib.staticfiles.finders.AppDirectoriesFinder',
+)
+
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'django_cache_table',
+        'TIMEOUT': 120,
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000
+        }
+    }
+}
+# python manage.py createcachetable
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.memcached.MemcachedCache',
+#         'LOCATION': '127.0.0.1:11211',
+#         'LOCATION': 'unix:/tmp/memcached.sock',
+#         'LOCATION': [
+#             '172.19.26.240:11211',
+#             '172.19.26.242:11211',
+#         ]
+#     }
+# }
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.filebased.FileBasedCache',
+#         'LOCATION': '/var/tmp/django_cache',
+#     }
+# }
+# CACHES = {
+#     'default': {
+#         'BACKEND': 'django.core.cache.backends.dummy.DummyCache',
+#     }
+# }
 try:
     from .local_settings import *
 except ImportError:

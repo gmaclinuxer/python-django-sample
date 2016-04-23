@@ -17,6 +17,13 @@ app = Celery('config')
 app.config_from_object('django.conf:settings')  # config celery with settings.py
 app.autodiscover_tasks(lambda: settings.INSTALLED_APPS, related_name='tasks')
 
+app.conf.update(
+    CELERY_RESULT_BACKEND='djcelery.backends.database:DatabaseBackend',
+)
+
+# app.conf.update(
+#     CELERY_RESULT_BACKEND='djcelery.backends.cache:CacheBackend',
+# )
 
 # With the line above Celery will automatically discover tasks in reusable apps if you follow the tasks.py convention:
 #
