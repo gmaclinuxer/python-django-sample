@@ -37,7 +37,10 @@ def celery_hello(request):
         'task_name': apply_info.task_name
     })
 
-
+@cache_page(30)
+@vary_on_cookie
+# @vary_on_headers('User-Agent', 'Cookie')
+# @vary_on_headers('User-Agent')
 def task_caller(request, task_name):
     apply_info = {}
     if task_name == 'task_A':
