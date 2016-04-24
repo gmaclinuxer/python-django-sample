@@ -1,9 +1,16 @@
+# celery -A chat.   tasks worker -l info
+
+# python -m config.celery
+# celery worker -A config -E -l info -n workerA -Q QueueA  -c 2
+# celery worker -A config -E -l info -n workerB -Q QueueB  -c 2
+# celery worker -A config -E -l info -n workerX -Q QueueA,QueueB,default --autoscale=1,4
 ---- -- - - ---- Commands- -------------- --- ------------
-# python manage.py shell
-# from config.celery import app
-# app.control.revoke('32ba5fe4-918c-480f-8a78-a310c11d0c3a')
-# app.control.discard_all()
-# app.control.purge()
+python manage.py shell
+from config.celery import app
+app.control.discard_all()
+app.control.purge()
+
+app.control.revoke('32ba5fe4-918c-480f-8a78-a310c11d0c3a')
 
 + Main:
 |    celery worker

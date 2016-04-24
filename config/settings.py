@@ -186,10 +186,6 @@ class TaskRouter(object):
         #     return None
 
 CELERY_ROUTES = (TaskRouter(),)
-
-# celery worker -A config -E -l info -n workerA -Q QueueA
-# celery worker -A config -E -l info -n workerB -Q QueueB
-# celery worker -A config -E -l info -n workerX -Q QueueA,QueueB,default
 # ===============================================================
 MIDDLEWARE_CLASSES = (
     'django.contrib.sessions.middleware.SessionMiddleware',

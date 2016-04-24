@@ -13,8 +13,8 @@ def add(x, y):
     print ('%s + %s' % (x, y))
     return x + y
 
-# celery -A celery_snappy.miya worker -l info -c 4
-# from celery_snappy.miya import add
+# celery -A snappy.miya worker -l info -c 4
+# from snappy.miya import add
 x = add.delay(2, 3)
 print (x.ready())
 print (x.result)

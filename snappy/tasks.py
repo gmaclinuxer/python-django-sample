@@ -9,11 +9,17 @@ from celery.exceptions import SoftTimeLimitExceeded
 from celery.schedules import crontab
 from celery.task import periodic_task
 from celery.utils.log import get_task_logger
-from config import settings
 
-# # app = Celery('chat.tasks', broker='amqp://guest:guest@localhost:5672//', backend='redis://localhost:6379/0')
-# # app = Celery('chat.tasks', backend='rpc://', broker='amqp://')
-# app = Celery('chat.tasks', backend='redis://localhost', broker='amqp://')
+'''
+If you want to keep track of tasks or need the return values,
+then Celery must store or send the states somewhere so that they can be retrieved later.
+There are several built-in result backends to choose from:
+SQLAlchemy/Django ORM, Memcached, RabbitMQ/QPid (rpc), MongoDB, and Redis – or you can define your own.
+'''
+app = Celery('tasks', broker='amqp://guest:guest@localhost:5672//', backend='redis://localhost:6379/0')
+# app = Celery('tasks', backend='redis://localhost', broker='amqp://')
+# chord_unlock retry forever on res.get(), rpc not store result but send it as msg, so it can only be retrieved once
+# app = Celery('tasks', backend='rpc://', broker='amqp://')
 # app.conf.update(
 #     CELERY_TASK_SERIALIZER='json',
 #     CELERY_ACCEPT_CONTENT=['json', 'pickle'],  # Ignore other content
@@ -21,6 +27,9 @@ from config import settings
 #     # CELERY_TIMEZONE='Asia/Shanghai',
 #     CELERY_ENABLE_UTC=False,
 # )
+
+print('EAGER: {0}'.format(app.conf.CELERY_ALWAYS_EAGER))
+
 logger = get_task_logger(__name__)
 
 
@@ -47,15 +56,15 @@ def xsum(numbers):
     r = sum(numbers)
     msg = 'xsum {0} = {1}'.format(numbers, r)
     logger.warning(msg)
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         print (msg)
     return r
 
 
-@task(bind=True, ignore_result=True)
+@task(bind=True)
 def task_A(self, arg1, arg2, kwarg1='x', kwarg2='y'):
     logger.warning('start task_A')
-    time.sleep(1)
+    # time.sleep(1)
     logger.warning('a=%s, b=%s; %s + %s = %s' % (arg1, arg2, kwarg1, kwarg2, arg1 + arg2))
     logger.warning('end task_A')
     return True
@@ -141,7 +150,7 @@ def task_chain():
     res = chain(num_off.s({'src': 'starter', 'dst': 0}), num_off.s(), num_off.s(), num_off.s(), num_off.s())
     # res = (num_off.s({'src': 'starter', 'dst': 0}) | num_off.s() | num_off.s() | num_off.s() | num_off.s())
     # run sync in current process
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         pipe = res()
         result = pipe.get()
         print('reslt is: %s, run: dot -Tpng graph.dot -o graph.png to get call graph' % result)
@@ -193,7 +202,7 @@ def filter(data):
     # flist = random.shuffle(flist)
     flist.sort()
     logger.warning('filterd list: %s', flist)
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         print ('filterd list: %s' % flist)
     return flist
 
@@ -219,7 +228,7 @@ def task_group():
     chain(job, xsum.s()).apply_async()
     # chord(job, xsum.s()).apply_async()
     # sync call
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         res = job.delay()
         cnt = 0
         while not res.ready():
@@ -247,14 +256,14 @@ def task_chord():
     callback = xsum.s()
     # callback can only be executed after all of the tasks in the header have returned
     c2 = chord(header)(callback)  # AsyncResult object
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         print('task_chord: %s' % c2.get())
 
 
 @task
 def task_chunks():
     # divide an iterable of work into pieces, so that if you have one million objects, you can create 10 tasks with hundred thousand objects each
-    if settings.CELERY_ALWAYS_EAGER:
+    if app.conf.CELERY_ALWAYS_EAGER:
         res = add.chunks(zip(range(100), range(100)), 10)()
         print('task_chunks: %s' % res.get())
     add.chunks(zip(range(100), range(100)), 10).apply_async()

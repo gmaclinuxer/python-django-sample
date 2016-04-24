@@ -1,0 +1,22 @@
+>>> from project.myapp.tasks import mytask   # << GOOD
+
+>>> from myapp.tasks import mytask    # << BAD!!!
+The second example will cause the task to be named differently since the worker and the client imports the modules under different names:
+
+>>> from project.myapp.tasks import mytask
+>>> mytask.name
+'project.myapp.tasks.mytask'
+
+>>> from myapp.tasks import mytask
+>>> mytask.name
+'myapp.tasks.mytask'
+So for this reason you must be consistent in how you import modules, which is also a Python best practice.
+
+Similarly, you should not use old-style relative imports:
+
+from module import foo   # BAD!
+
+from proj.module import foo  # GOOD!
+New-style relative imports are fine and can be used:
+
+from .module import foo  # GOOD!
