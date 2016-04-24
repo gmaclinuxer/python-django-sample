@@ -175,6 +175,9 @@ class TaskRouter(object):
         #     return {
         #         "exchange": "fanout_exchange",
         #     }
+        #     return {'exchange': 'video',
+        #             'exchange_type': 'topic',
+        #             'routing_key': 'video.compress'}
         else:
             return {
                 'queue': 'default_queue',
