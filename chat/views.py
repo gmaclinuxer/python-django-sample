@@ -87,7 +87,7 @@ def task_caller(request, task_name):
         from config.celery import debug_task
         apply_info = debug_task.apply_async()
 
-    print(apply_info)
+    # print(apply_info)
 
     return render_json({
         'result': True,
