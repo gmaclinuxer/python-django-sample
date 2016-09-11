@@ -23,3 +23,4 @@ class ChatLiveTests(LiveServerTestCase):
         Test
         """
         self.fail('Incomplete Test')
+

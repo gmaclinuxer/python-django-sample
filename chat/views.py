@@ -32,7 +32,8 @@ def home(request):
 
 def celery_hello(request):
     from .tasks import hello_world
-    apply_info = hello_world.apply_async(args=['miya', 'hi'], kwargs={'user': 'miya', 'message': 'hi'})
+    apply_info = hello_world.apply_async(args=['miya', 'hi'],
+                                         kwargs={'user': 'miya', 'message': 'hi'})
     return render_json({
         'result': True,
         'task_id': apply_info.task_id,

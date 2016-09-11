@@ -42,6 +42,8 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'gunicorn',
     'chat',
+    'chartapp',
+    'chartit',
 )
 
 # ===============================================================
