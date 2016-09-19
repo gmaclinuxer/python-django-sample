@@ -40,8 +40,8 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'gunicorn',
-    'chat',
+    # 'gunicorn',
+    # 'chat',
     'chartapp',
     'chartit',
 )
@@ -231,13 +231,13 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-#     }
-# }
-DAO_TEST = bool(os.environ.get('DAO_TEST'))
+DATABASES = {
+     'default': {
+         'ENGINE': 'django.db.backends.sqlite3',
+         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+     }
+ }
+#DAO_TEST = bool(os.environ.get('DAO_TEST'))
 
 # DATABASES = {
 #    'default': {
@@ -250,16 +250,16 @@ DAO_TEST = bool(os.environ.get('DAO_TEST'))
 #    }
 # }
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'django_docker',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',
-        'PORT': 3306
-    }
-}
+#DATABASES = {
+#    'default': {
+#        'ENGINE': 'django.db.backends.mysql',
+#        'NAME': 'django_docker',
+#        'USER': 'root',
+#        'PASSWORD': 'root',
+#        'HOST': 'localhost',
+#        'PORT': 3306
+#    }
+#}
 
 # Internationalization
 # https://docs.djangoproject.com/en/1.8/topics/i18n/

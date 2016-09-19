@@ -29,6 +29,14 @@ def home(request):
     counter = redis.incr('counter')
     return render(request, 'home.html', {'items': items, 'counter': counter})
 
+def index(request):
+        Item.objects.create(text=request.POST['item_text'])
+        if request.method == 'POST':
+        return redirect('/')
+    items = Item.objects.all()
+    counter = redis.incr('counter')
+    return render(request, 'home.html', {'items': item, 'counter': counter})
+
 
 def celery_hello(request):
     from .tasks import hello_world
