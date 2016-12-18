@@ -1,14 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import os
-import time
-import redis
-import psutil
 import subprocess
-
 import sys
+import time
 
-r = redis.Redis('localhost', 6379)
+# psutil require subprocess
+import psutil
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PID_PATH = BASE_DIR
@@ -46,6 +44,7 @@ def get_process_status(name):
     except IOError:
         return 'IOError', None
 
+
 def start_process(script_name):
     """
     Starts a process in the background and writes a PID file
@@ -64,17 +63,20 @@ def start_process(script_name):
     status, pid = get_process_status(name)
     print 'process-%s: %s' % (status, pid)
     if pid is not None and status in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
+        # must wait for subprocess thread ready
+        print 'process-%s exist: %s' % (pid, status)
         return pid
 
     # start script xxx.py without shell
     # process_shell = subprocess.Popen(path + ' > /dev/null 2> /dev/null &', shell=True)
-    process = subprocess.Popen(['python', script_name], shell=False, stderr=subprocess.STDOUT)
+    # process = subprocess.Popen(['python', script_name], shell=False, stderr=subprocess.STDOUT)
+    process = psutil.Popen(['python', script_name], shell=False, stderr=subprocess.STDOUT)
     proc = psutil.Process(process.pid)
 
     # must wait for subprocess thread ready
     while proc.status() != psutil.STATUS_RUNNING:
         print 'wait process-%s: %s' % (process.pid, proc.status())
-        time.sleep(0.1)
+        time.sleep(0.3)
     else:
         # record pid to xxx.pid
         file_path = os.path.join(PID_PATH, '%s.pid' % name)
@@ -83,6 +85,7 @@ def start_process(script_name):
         print 'process-%s started.' % process.pid
 
     return process.pid
+
 
 def kill_process(script_name):
     """
@@ -99,8 +102,9 @@ def kill_process(script_name):
     if pid is not None and status in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
         # start script xxx.py without shell
         # process_shell = subprocess.Popen(path + ' > /dev/null 2> /dev/null &', shell=True)
-        process = subprocess.Popen(['kill', '-9', str(pid)], shell=False)
+        # process = subprocess.Popen(['kill', '-9', str(pid)], shell=False)
         proc = psutil.Process(pid)
+        proc.kill()
         try:
             while proc.status() in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
                 print 'wait process-%s: %s' % (pid, proc.status())
@@ -116,10 +120,12 @@ def kill_process(script_name):
     else:
         print 'process-%s is not running.' % pid
 
+
 def usage():
     print '''
-    Usage: {} <start>|<stop>|<restart> scriptname.py
+    Usage: {} scriptname.py <start>|<stop>|<restart>
     '''.format(sys.argv[0])
+
 
 if __name__ == '__main__':
 
@@ -127,8 +133,8 @@ if __name__ == '__main__':
         usage()
         sys.exit(1)
 
-    opt_type = sys.argv[1]
-    script_name = sys.argv[2]
+    script_name = sys.argv[1]
+    opt_type = sys.argv[2]
     print '%s %s' % (opt_type, script_name)
 
     if opt_type == 'start':

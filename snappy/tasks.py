@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-from celery import task, Celery
+from celery import Celery, task
 from celery.utils.log import get_task_logger
 
 app = Celery('tasks', broker='amqp://', backend='rpc://')

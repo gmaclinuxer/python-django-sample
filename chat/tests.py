@@ -1,7 +1,6 @@
 #coding=utf8
-from django.test import TestCase
+from django.test import LiveServerTestCase, TestCase
 from django.test.client import Client
-from django.test import LiveServerTestCase
 from selenium import webdriver
 
 
@@ -23,4 +22,3 @@ class ChatLiveTests(LiveServerTestCase):
         Test
         """
         self.fail('Incomplete Test')
-

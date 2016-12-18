@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
 
+import datetime
 import random
 
-import datetime
-from django.db.models import Sum, Count, Avg
+from chartit import Chart, DataPool, PivotChart, PivotDataPool
+from django.db.models import Avg, Count, Sum
 from django.http import HttpResponse
 from django.shortcuts import render, render_to_response
 
 # Create your views here.
-from chartapp.models import MonthlyWeatherByCity, SalesHistory, FailedStat, SUCCESS, STILL_RUNNING, UNKNOWN, ERR_DICT
-from chartit import DataPool, Chart, PivotChart, PivotDataPool
-
+from chartapp.models import (ERR_DICT, STILL_RUNNING, SUCCESS, UNKNOWN,
+                             FailedStat, MonthlyWeatherByCity, SalesHistory)
 from config import settings
 
 

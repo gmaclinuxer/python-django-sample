@@ -1,14 +1,16 @@
+import os
 from datetime import datetime, timedelta
-from django.shortcuts import render, redirect
+
+from django.core.cache import cache
+from django.shortcuts import redirect, render
+# cache.get/set/delete/get_many/set_many/delete_many/clear/incr/decr
+from django.views.decorators.cache import cache_page
+from django.views.decorators.vary import vary_on_cookie, vary_on_headers
+from redis import Redis
 
 from .models import Item
 from .utils import render_json
-from redis import Redis
-import os
-from django.core.cache import cache
-# cache.get/set/delete/get_many/set_many/delete_many/clear/incr/decr
-from django.views.decorators.cache import cache_page
-from django.views.decorators.vary import vary_on_headers, vary_on_cookie
+
 # redis = Redis(host=os.environ['REDIS_PORT_6379_TCP_ADDR'],
 #              port=os.environ['REDIS_PORT_6379_TCP_PORT'],
 #              password=os.environ.get('REDIS_PASSWORD'))
@@ -40,6 +42,7 @@ def celery_hello(request):
         'task_name': apply_info.task_name
     })
 
+
 def task_caller(request, task_name):
     apply_info = {}
     if task_name == 'task_A':
@@ -56,7 +59,7 @@ def task_caller(request, task_name):
         apply_info = task_period.apply_async(args=[])
     if task_name == 'task_add':
         from .tasks import add
-        apply_info = add.apply_async(args=[1,2])
+        apply_info = add.apply_async(args=[1, 2])
     if task_name == 'task_retry':
         from .tasks import task_retry
         apply_info = task_retry.apply_async()

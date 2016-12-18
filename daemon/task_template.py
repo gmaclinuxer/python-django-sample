@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+import logging
 import os
 import sys
 import time
-import logging
-from logging import DEBUG, INFO, WARNING, ERROR, CRITICAL
+from logging import CRITICAL, DEBUG, ERROR, INFO, WARNING
+
+# test import and orm
+from chat import models
 
 # auto config django environment
 cur_dir, script_name = os.path.split(os.path.abspath(__file__))
@@ -29,8 +32,6 @@ else:
                 os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % settings_url
             break
 
-# test import and orm
-from chat import models
 print models.Item.objects.all()
 
 

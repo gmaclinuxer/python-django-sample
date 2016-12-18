@@ -1,143 +1,87 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 
 import os
-import time
-import redis
-import psutil
-import subprocess
-
 import sys
+import time
+from logging import INFO
 
-r = redis.Redis('localhost', 6379)
+from utils import logto
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-PID_PATH = BASE_DIR
+# create logger
+name = os.path.splitext(os.path.basename(__file__))[0]
+logger = logto('./%s.log' % name, level=INFO)
+
+# auto config django environment
+cur_dir, script_name = os.path.split(os.path.abspath(__file__))
+
+# manage.py must be put in django project root
+while 'manage.py' not in os.listdir(cur_dir):
+    print 'current dir: %s' % cur_dir
+    cur_dir, _ = os.path.split(cur_dir)
+else:
+    print 'root of django project: %s' % cur_dir
+    sys.path.append(cur_dir)
+    for root, dirs, files in os.walk(cur_dir):
+        if 'settings.py' in files:
+            print 'root of the settings.py: %s' % root
+            settings_url = root.replace(cur_dir, '').replace(os.path.sep, '.')
+
+            # convert .config.settings to config.settings
+            if settings_url.startswith('.'):
+                settings_url = settings_url[1:]
+
+            # avoid overwrite DJANGO_SETTINGS_MODULE
+            if os.getenv('DJANGO_SETTINGS_MODULE') is None:
+                os.environ["DJANGO_SETTINGS_MODULE"] = "%s.settings" % settings_url
+            break
 
 
-def get_process_pid(name):
+def subscribe_cc():
     '''
-    获取进程pid
+    subscribe redis of cc for ip info sync
     '''
 
-    file_path = os.path.join(PID_PATH, '%s.pid' % name)
-    with open(file_path, 'r') as f:
-        pid = f.read()
+    # item data change type
+    MIGRATE = 0
+    DELETE = -1
 
-    try:
-        pid = int(pid)
-    except:
-        pid = -1
-    return pid
+    # test import and orm
+    from chat import models
+    print models.Item.objects.all()
 
+    import redis
+    rc = redis.Redis(host='10.142.22.18', port=11311, db=0, password='qcloud_cc_cache')
+    ps = rc.pubsub()
+    ps.subscribe(['JOB-QCLOUD-HOST-MODULE', 'JOB-QCLOUD-HOST-SOURCE'])
+    for item in ps.listen():
+        # skip type of 'subscribe'
+        if item['type'] != 'message':
+            continue
+        chan, data = item.get('channel'), item.get('data')
+        logger.info('[%s]: %s' % (chan, item))
 
-def get_process_status(name):
-    '''
-    获取进程状态
-    '''
-
-    try:
-        pid = get_process_pid(name)
-        proc = psutil.Process(pid)
-        if proc.status() == psutil.STATUS_ZOMBIE:
-            pass
-        return proc.status(), proc.pid
-    except psutil.NoSuchProcess:
-        return 'NoSuchProcess', None
-    except IOError:
-        return 'IOError', None
-
-def start_process(script_name):
-    """
-    Starts a process in the background and writes a PID file
-    returns integer: pid
-
-    http://stackoverflow.com/questions/7989922/opening-a-process-with-popen-and-getting-the-pid
-    Popen.pid The process ID of the child process.
-    Note that if you set the shell argument to True, this is the process ID of the spawned shell.
-    """
-
-    # /tmp/xxx.py -> xxx
-    script_name = os.path.basename(script_name)
-    name = os.path.splitext(script_name)[0]
-
-    # Check if the process is already running
-    status, pid = get_process_status(name)
-    print 'process-%s: %s' % (status, pid)
-    if pid is not None and status in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
-        return pid
-
-    # start script xxx.py without shell
-    # process_shell = subprocess.Popen(path + ' > /dev/null 2> /dev/null &', shell=True)
-    process = subprocess.Popen(['python', script_name], shell=False, stderr=subprocess.STDOUT)
-    proc = psutil.Process(process.pid)
-
-    # must wait for subprocess thread ready
-    while proc.status() != psutil.STATUS_RUNNING:
-        print 'wait process-%s: %s' % (process.pid, proc.status())
-        time.sleep(0.1)
-    else:
-        # record pid to xxx.pid
-        file_path = os.path.join(PID_PATH, '%s.pid' % name)
-        with open(file_path, 'w') as pidfile:
-            pidfile.write(str(process.pid))
-        print 'process-%s started.' % process.pid
-
-    return process.pid
-
-def kill_process(script_name):
-    """
-    kill a process in the background
-    """
-
-    # /tmp/xxx.py -> xxx
-    script_name = os.path.basename(script_name)
-    name = os.path.splitext(script_name)[0]
-
-    # Check if the process is already running
-    status, pid = get_process_status(name)
-    print 'process-%s: %s' % (status, pid)
-    if pid is not None and status in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
-        # start script xxx.py without shell
-        # process_shell = subprocess.Popen(path + ' > /dev/null 2> /dev/null &', shell=True)
-        process = subprocess.Popen(['kill', '-9', str(pid)], shell=False)
-        proc = psutil.Process(pid)
+        biz_id, inner_ip, outer_ip, plat_id, opt_type = data.get('ApplicationID'), \
+                                                        data.get('InnerIP'), \
+                                                        data.get('OuterIP'), \
+                                                        data.get('Source'), \
+                                                        data.get('Type')
         try:
-            while proc.status() in [psutil.STATUS_RUNNING, psutil.STATUS_SLEEPING]:
-                print 'wait process-%s: %s' % (pid, proc.status())
-                time.sleep(0.1)
-        except psutil.NoSuchProcess:
+            ip = models.IP.objects.get(biz_id=biz_id, inner_ip=inner_ip, outer_ip=outer_ip, plat_id=plat_id)
+            if opt_type == DELETE:
+                pass
+            elif opt_type == MIGRATE:
+                pass
+            else:
+                logger.warning(u'unknown opt_type: %s' % opt_type)
+        except models.IP.DoesNotExist:
+            # not care IP
             pass
-        finally:
-            # record pid to xxx.pid
-            file_path = os.path.join(PID_PATH, '%s.pid' % name)
-            if os.path.exists(file_path):
-                os.remove(file_path)
-            print 'process-%s killed.' % pid
-    else:
-        print 'process-%s is not running.' % pid
 
-def usage():
-    print '''
-    Usage: {} <start>|<stop>|<restart> scriptname.py
-    '''.format(sys.argv[0])
 
 if __name__ == '__main__':
-
-    if len(sys.argv) < 3:
-        usage()
-        sys.exit(1)
-
-    opt_type = sys.argv[1]
-    script_name = sys.argv[2]
-    print '%s %s' % (opt_type, script_name)
-
-    if opt_type == 'start':
-        start_process(script_name)
-    elif opt_type == 'stop':
-        kill_process(script_name)
-    elif opt_type == 'restart':
-        kill_process(script_name)
-        start_process(script_name)
-    else:
-        usage()
-        sys.exit(1)
+    i = 0
+    while True:
+        logger.info('while: i = %s' % i)
+        i += 1
+        time.sleep(3)
+    # subscribe_cc()

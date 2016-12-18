@@ -1,4 +1,4 @@
-from django.conf.urls import url, patterns, include
+from django.conf.urls import include, patterns, url
 
 urlpatterns = patterns('chartapp.views',
     url(r'^$', 'index', name='index'),

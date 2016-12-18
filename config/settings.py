@@ -12,8 +12,12 @@ https://docs.djangoproject.com/en/1.8/ref/settings/
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from __future__ import absolute_import
+
 import os
 from datetime import timedelta
+
+# schedules task config
+from celery.schedules import crontab
 
 TIME_ZONE = 'Asia/Shanghai'
 
@@ -44,6 +48,7 @@ INSTALLED_APPS = (
     'chat',
     'chartapp',
     'chartit',
+    'fabric_master',
 )
 
 # ===============================================================
@@ -87,8 +92,6 @@ CELERY_RESULT_BACKEND = 'djcelery.backends.database:DatabaseBackend'
 # chord used but no CELERY_RESULT_BACKEND config
 # [2016-04-22 19:17:39,536: INFO/MainProcess] Task celery.chord_unlock[c4a7ad4f-54f2-43e2-b684-0e81cc0ebb6c] retry: Retry in 1s: AttributeError("'DisabledBackend' object has no attribute '_get_task_meta_for'",)
 
-# schedules task config
-from celery.schedules import crontab
 
 CELERYBEAT_SCHEDULE = {
     'first_task': {

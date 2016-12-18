@@ -2,12 +2,13 @@
 from __future__ import absolute_import
 
 import os
+
 from celery import Celery
+from django.conf import settings
 
 # set the default Django settings module for the 'celery' command-line program
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-from django.conf import settings
 
 app = Celery('config')
 

@@ -1,5 +1,6 @@
-from django.conf.urls import url, patterns, include
+from django.conf.urls import include, patterns, url
 from django.views.decorators.cache import cache_page
+
 from .views import celery_hello
 
 urlpatterns = patterns('chat.views',
