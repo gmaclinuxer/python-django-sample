@@ -49,6 +49,7 @@ INSTALLED_APPS = (
     'chartapp',
     'chartit',
     'fabric_master',
+    'explore',
 )
 
 # ===============================================================

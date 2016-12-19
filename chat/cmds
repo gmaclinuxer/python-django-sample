@@ -1,4 +1,4 @@
-# celery -A chat.   tasks worker -l info
+# celery -A chat.tasks worker -l info
 
 # python -m config.celery
 # celery worker -A config -E -l info -n workerA -Q QueueA  -c 2

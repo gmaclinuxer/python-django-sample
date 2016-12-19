@@ -6,4 +6,5 @@ urlpatterns = [
     url(r'^', include('chat.urls')),
     url(r'^chart/', include('chartapp.urls')),
     url(r'^fabric/', include('fabric_master.urls')),
+    url(r'^explore/', include('explore.urls')),
 ]
