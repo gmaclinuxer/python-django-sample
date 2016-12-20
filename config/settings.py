@@ -73,6 +73,7 @@ CELERY_ACCEPT_CONTENT = ['pickle', 'json', 'msgpack', 'yaml']
 # ===============================================================
 
 # # broker settings
+BROKER_URL = 'django://'
 # BROKER_URL = 'amqp://guest:guest@localhost:5672//'
 # # list of modules to import when celery starts.
 # # store schedule in the db
