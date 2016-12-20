@@ -143,6 +143,8 @@ def celery_task3(**kwargs):
     except Exception as e:
         logger.error(u"celery_task3(Exception): %s" % e.message)
 
+class ParameterError(Exception):
+    pass
 
 @task()
 def celery_task(**kwargs):
@@ -160,7 +162,6 @@ def celery_task(**kwargs):
     def smart_run(command):
         smart_settings = {
             'warn_only': True,
-            'passwords': kwargs.get('passwords'),
         }
 
         # 支持sudo
@@ -170,6 +171,18 @@ def celery_task(**kwargs):
         # 支持堡垒机
         if kwargs.get('gateway'):
             smart_settings.update(gateway=kwargs.get('gateway'))
+
+        # 支持密码
+        if kwargs.get('passwords'):
+            smart_settings.update(passwords=kwargs.get('passwords'))
+
+        # 支持密钥
+        if kwargs.get('key_file_list'):
+            smart_settings.update(key_filename=kwargs.get('key_file_list'))
+
+        # 简单校验
+        if smart_settings.get('passwords') is None and smart_settings.get('key_filename') is None:
+            raise ParameterError('Ether passwords or key_file_list should be provided.')
 
         # 修改env上下文，局部有效
         with settings(
@@ -182,7 +195,7 @@ def celery_task(**kwargs):
 
     # Fabric has a fail-fast execution policy, let's catch it
     try:
-        result = execute(smart_run, 'hostname > /tmp/host.txt', hosts=kwargs.get('hosts'))
+        result = execute(smart_run, 'ls / > /tmp/host.txt', hosts=kwargs.get('hosts'))
         logger.info(result)
     except Exception as e:
         logger.error(u"celery_task(Exception): %s" % e.message)
