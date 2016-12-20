@@ -90,47 +90,4 @@ ENV/
 # Rope project settings
 .ropeproject
 
-将删除 .gitignore
-将删除 .idea/dataSources.ids
-将删除 .idea/dataSources.local.xml
-将删除 .idea/dataSources.xml
-将删除 .idea/encodings.xml
-将删除 SELECT_t___FROM_django_docker_django_cac.html
-将删除 _trial_temp/
-将删除 celery.log
-将删除 celerybeat-schedule
-将删除 chartapp/__init__.py
-将删除 chartapp/migrations/
-将删除 chat/__init__.pyc
-将删除 chat/__pycache__/
-将删除 chat/admin.pyc
-将删除 chat/log.log
-将删除 chat/models.pyc
-将删除 chat/sync.log
-将删除 chat/tasks.pyc
-将删除 chat/tests.pyc
-将删除 chat/views.pyc
-将删除 config/__init__.pyc
-将删除 config/__pycache__/
-将删除 config/celery.pyc
-将删除 config/settings.pyc
-将删除 config/wsgi.pyc
-将删除 daemon.tar.gz
-将删除 daemon/sync.log
-将删除 daemon/t1.log
-将删除 daemon/t1.py
-将删除 daemon/t2.log
-将删除 daemon/t2.py
-将删除 daemon/utils.pyc
-将删除 djcelery.scheduler.DatabaseScheduler
-将删除 manage.pyc
-将删除 pipe.dot
-将删除 pipe.png
-将删除 pipe1.dot
-将删除 pipe1.png
-将删除 pipe2.dot
-将删除 snappy/__init__.pyc
-将删除 snappy/__pycache__/
-将删除 snappy/tasks.pyc
-将删除 static/themes/
-将删除 sync.log
+.idea
