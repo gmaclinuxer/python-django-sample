@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Django settings for docker_django project.
 
@@ -189,8 +190,9 @@ class TaskRouter(object):
             return {
                 'queue': 'default_queue',
             }
-        # else:
-        #     return None
+            # else:
+            #     return None
+
 
 CELERY_ROUTES = (TaskRouter(),)
 # ===============================================================
@@ -336,21 +338,177 @@ except ImportError:
     pass
 
 
+# ==============================================================================
+# Django 项目配置
+# ==============================================================================
+APP_ID = 'django_docker'
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT, PROJECT_MODULE_NAME = os.path.split(PROJECT_PATH)
+BASE_DIR = os.path.dirname(os.path.dirname(PROJECT_PATH))
+
+# ==============================================================================
+# 应用运行环境配置信息
+# ==============================================================================
+ENVIRONMENT = os.environ.get('BK_ENV', 'development')
+# 应用访问路径
+SITE_URL = '/'
+# 运行模式， DEVELOP(开发模式)， TEST(测试模式)， PRODUCT(正式模式)
+RUN_MODE = 'DEVELOP'
+if ENVIRONMENT.endswith('production'):
+    RUN_MODE = 'PRODUCT'
+    DEBUG = False
+    SITE_URL = '/o/%s/' % APP_ID
+elif ENVIRONMENT.endswith('testing'):
+    RUN_MODE = 'TEST'
+    DEBUG = False
+    SITE_URL = '/t/%s/' % APP_ID
+else:
+    RUN_MODE = 'DEVELOP'
+    DEBUG = True
+TEMPLATE_DEBUG = DEBUG
+
+# ==============================================================================
+# logging
+# ==============================================================================
+BK_LOG_DIR = os.environ.get('BK_LOG_DIR', '/data/paas/apps/logs/')
+LOGGING_DIR = os.path.join(BASE_DIR, 'logs', APP_ID)
+LOG_CLASS = 'logging.handlers.RotatingFileHandler'
+if RUN_MODE == 'DEVELOP':
+    LOG_LEVEL = 'DEBUG'
+elif RUN_MODE == 'TEST':
+    LOGGING_DIR = os.path.join(BK_LOG_DIR, APP_ID)
+    LOG_LEVEL = 'INFO'
+elif RUN_MODE == 'PRODUCT':
+    LOGGING_DIR = os.path.join(BK_LOG_DIR, APP_ID)
+    LOG_LEVEL = 'ERROR'
+
+# # ===============================================================================
+# # 静态资源设置
+# # ===============================================================================
+# # 静态资源文件(js,css等）在应用上线更新后, 由于浏览器有缓存, 可能会造成没更新的情况.
+# # 所以在引用静态资源的地方，都需要加上这个版本号，如：<script src="/a.js?v=${STATIC_VERSION}"></script>；
+# # 如果静态资源修改了以后，上线前修改这个版本号即可
+# STATICFILES_DIRS = (
+#     os.path.join(PROJECT_ROOT, 'static'),
+# )
+STATIC_VERSION = 2.2
+# # 应用本地静态资源目录
+# STATIC_URL = '%sstatic/' % SITE_URL
+#
+# ROOT_URLCONF = 'urls'
+#
+# STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static_root')
+# ==============================================================================
+# Templates
+# ==============================================================================
+# mako template dir
+MAKO_TEMPLATE_DIR = os.path.join(PROJECT_ROOT, 'templates')
+MAKO_TEMPLATE_MODULE_DIR = os.path.join(BASE_DIR, 'templates_module', APP_ID)
+if RUN_MODE not in ['DEVELOP']:
+    MAKO_TEMPLATE_MODULE_DIR = os.path.join(PROJECT_ROOT, 'templates_module', APP_ID)
+# Django TEMPLATES配置
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(PROJECT_ROOT, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                # the context to the templates
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.request',
+                'django.template.context_processors.csrf',
+                'common.context_processors.mysetting',   # 自定义模版context，可在页面中使用STATIC_URL等变量
+                'django.template.context_processors.i18n',
+            ],
+        },
+    },
+]
+
+
+# 自动建立日志目录
+if not os.path.exists(LOGGING_DIR):
+    try:
+        os.makedirs(LOGGING_DIR)
+    except:
+        pass
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '%(levelname)s [%(asctime)s] %(pathname)s %(lineno)d %(funcName)s %(process)d %(thread)d \n \t %(message)s \n',
+            'datefmt': '%Y-%m-%d %H:%M:%S'
+        },
+        'simple': {
+            'format': '%(levelname)s %(message)s \n'
+        },
+    },
     'handlers': {
-        'file': {
+        'null': {
             'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'debug.log',
+            'class': 'django.utils.log.NullHandler',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler'
+        },
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'root': {
+            'class': LOG_CLASS,
+            'formatter': 'verbose',
+            'filename': os.path.join(LOGGING_DIR, '%s.log' % APP_ID),
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5
+        },
+        'component': {
+            'class': LOG_CLASS,
+            'formatter': 'verbose',
+            'filename': os.path.join(LOGGING_DIR, 'component.log'),
+            'maxBytes': 1024 * 1024 * 10,
+            'backupCount': 5
+        },
+        'wb_mysql': {
+            'class': LOG_CLASS,
+            'formatter': 'verbose',
+            'filename': os.path.join(LOGGING_DIR, 'wb_mysql.log'),
+            'maxBytes': 1024 * 1024 * 4,
+            'backupCount': 5
         },
     },
     'loggers': {
         'django': {
-            'handlers': ['file'],
+            'handlers': ['null'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+        # the root logger ,用于整个project的logger
+        'root': {
+            'handlers': ['root'],
+            'level': LOG_LEVEL,
+            'propagate': True,
+        },
+        # 组件调用日志
+        'component': {
+            'handlers': ['component'],
+            'level': 'WARN',
+            'propagate': True,
+        },
+        # other loggers...
+        'django.db.backends': {
+            'handlers': ['wb_mysql'],
             'level': 'DEBUG',
             'propagate': True,
         },
-    },
+    }
 }
