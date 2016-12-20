@@ -9,7 +9,7 @@ more:
 
 from celery.task import task
 from fabric.api import env, hosts, roles, run, execute, settings, hide, sudo, with_settings, put, output
-from common.log import logger
+from common.basic import logger
 
 # http://docs.fabfile.org/en/1.4.0/usage/execution.html#roles
 env.skip_bad_hosts = True
