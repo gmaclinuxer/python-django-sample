@@ -58,6 +58,9 @@ except NameError:
     raw_input = input
 
 
+# fabric+pexpect will feed some situation
+
+
 #
 # Some constants.
 #
