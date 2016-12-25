@@ -90,4 +90,18 @@ ENV/
 # Rope project settings
 .ropeproject
 
-.idea
+.idea/*.*
+将删除 _trial_temp/
+将删除 chartapp/migrations/
+将删除 daemon.tar.gz
+将删除 daemon/t1.py
+将删除 daemon/t2.py
+将删除 djcelery.scheduler.DatabaseScheduler
+将删除 fabric_master/migrations/
+将删除 pipe.dot
+将删除 pipe.png
+将删除 pipe1.dot
+将删除 pipe1.png
+将删除 pipe2.dot
+将删除 static/themes/
+将删除 tox.ini

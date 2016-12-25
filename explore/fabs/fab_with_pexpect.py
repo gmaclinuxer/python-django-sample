@@ -51,11 +51,11 @@ from __future__ import absolute_import
 import os, sys, re, getopt, getpass
 import pexpect
 
-
 try:
     raw_input
 except NameError:
     raw_input = input
+
 
 
 #
