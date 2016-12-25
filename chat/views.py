@@ -1,4 +1,5 @@
 import os
+import time
 from datetime import datetime, timedelta
 
 from django.core.cache import cache
@@ -19,6 +20,9 @@ redis = Redis(host='localhost',
               port=6379)
 
 
+def sleep_test(seconds):
+    time.sleep(seconds)
+
 # password='redis')
 # @cache_page(30)
 # @vary_on_cookie
@@ -28,6 +32,7 @@ def home(request):
         Item.objects.create(text=request.POST['item_text'])
         return redirect('/')
     items = Item.objects.all()
+    sleep_test(1)
     counter = redis.incr('counter')
     return render(request, 'home.html', {'items': items, 'counter': counter})
 

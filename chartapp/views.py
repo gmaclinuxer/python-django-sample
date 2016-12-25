@@ -122,6 +122,9 @@ def index(request):
     return render_to_response('index.html', {'weatherchart': cht, 'STATIC_URL': settings.STATIC_URL})
 
 
+from debug_toolbar_line_profiler import profile_additional
+from chartapp.models import FailedStat
+# @profile_additional(FailedStat.random)
 def pie(request, top_n=10):
     def err_map(item):
         return ERR_DICT.get(item, 'UNKNOWN')

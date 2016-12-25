@@ -51,6 +51,8 @@ INSTALLED_APPS = (
     'chartit',
     'fabric_master',
     'explore',
+    'debug_toolbar',
+    'debug_toolbar_line_profiler',
 )
 
 # ===============================================================
@@ -207,6 +209,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',
+    'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
 
 ROOT_URLCONF = 'config.urls'
@@ -512,3 +515,38 @@ LOGGING = {
         },
     }
 }
+
+#===============================================================================
+# DEBUG_TOOLBAR 配置
+#===============================================================================
+DEBUG_TOOLBAR_PANELS = [
+    'debug_toolbar.panels.versions.VersionsPanel',
+    'debug_toolbar.panels.timer.TimerPanel',
+    'debug_toolbar.panels.settings.SettingsPanel',
+    'debug_toolbar.panels.headers.HeadersPanel',
+    'debug_toolbar.panels.request.RequestPanel',
+    'debug_toolbar.panels.sql.SQLPanel',
+    'debug_toolbar.panels.staticfiles.StaticFilesPanel',
+    'debug_toolbar.panels.templates.TemplatesPanel',
+    'debug_toolbar.panels.cache.CachePanel',
+    'debug_toolbar.panels.signals.SignalsPanel',
+    'debug_toolbar.panels.logging.LoggingPanel',
+    'debug_toolbar.panels.redirects.RedirectsPanel',
+    'debug_toolbar.panels.profiling.ProfilingPanel',
+    'debug_toolbar_line_profiler.panel.ProfilingPanel',
+    # 'debug_toolbar_user_panel.panels.UserPanel',
+]
+
+# from config.settings_env import STATIC_URL
+
+DEBUG_TOOLBAR_CONFIG = {
+    # Toolbar options
+    # 'JQUERY_URL': '%s%s' % (STATIC_URL, 'js/jquery-1.10.2.min.js'),
+    # Panel options
+    # 'DISABLE_PANELS': ['debug_toolbar.panels.cache.CachePanel'],
+    'SQL_WARNING_THRESHOLD': 100,   # milliseconds
+}
+DEBUG_TOOLBAR_PATCH_SETTINGS = False
+
+# The Debug Toolbar is shown only if your IP is listed in the INTERNAL_IPS setting.
+INTERNAL_IPS = ("localhost", '127.0.0.1')
