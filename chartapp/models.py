@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
+import random
+
 from django.db import models
 
 
@@ -209,7 +211,6 @@ ERR_CODE = [
     (NO_ROUTE_TO_HOST, 'NO_ROUTE_TO_HOST'),
 ]
 
-import random
 ERR_LIST = [_[0] for _ in ERR_CODE]
 ERR_DICT = dict(ERR_CODE)
 

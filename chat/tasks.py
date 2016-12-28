@@ -1,14 +1,17 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import
+
 import json
 import random
 import time
 from datetime import datetime, timedelta
-from celery import task, shared_task, chain, group, chord, chunks, Celery
+
+from celery import Celery, chain, chord, chunks, group, shared_task, task
 from celery.exceptions import SoftTimeLimitExceeded
 from celery.schedules import crontab
 from celery.task import periodic_task
 from celery.utils.log import get_task_logger
+
 from config import settings
 
 # # app = Celery('chat.tasks', broker='amqp://guest:guest@localhost:5672//', backend='redis://localhost:6379/0')

@@ -1,7 +1,10 @@
 # -*- coding: utf-8 -*-
 from django.contrib import admin
 from djcelery.models import TaskMeta, TaskSetMeta
+from kombu.transport.django import models as kombu_models
+
 from chat.models import Item
+
 
 # Register your models here.
 class TaskMetaAdmin(admin.ModelAdmin):
@@ -14,7 +17,6 @@ class ItemAdmin(admin.ModelAdmin):
     list_display = ['text', 'date_posted']
 
 
-from kombu.transport.django import models as kombu_models
 admin.site.register(kombu_models.Message)
 
 admin.site.register(TaskMeta, TaskMetaAdmin)
