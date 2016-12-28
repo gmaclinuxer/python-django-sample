@@ -46,7 +46,7 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # 'gunicorn',
-    # 'chat',
+    'chat',
     'chartapp',
     'chartit',
     'fabric_master',
@@ -58,7 +58,7 @@ INSTALLED_APPS = (
 # ===============================================================
 # # celery configuration
 INSTALLED_APPS += ("djcelery",)
-INSTALLED_APPS += ("kombu.transport.django",)
+# INSTALLED_APPS += ("kombu.transport.django",)
 CELERY_ALWAYS_EAGER = False  # if set True, all tasks will be executed locally by blocking until the task returns
 # CELERY_IMPORTS = ('chat.tasks', )
 # CELERY_ENABLE_UTC = False

@@ -264,7 +264,6 @@ def task_chunks():
     # group = add.chunks(zip(range(100), range(100)), 10).group()
     # group.skew(start=1, stop=10)()
 
-
 # http://docs.celeryproject.org/en/latest/userguide/tasks.html#tips-and-best-practices
 '''
 # If you don’t care about the results of a task, be sure to set the ignore_result option, as storing results wastes time and resources.

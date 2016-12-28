@@ -26,8 +26,7 @@ def test(request):
         )
 
     ds = DataPool(
-        series=
-        [{'options': {
+        series=[{'options': {
             'source': MonthlyWeatherByCity.objects.all()},
             'terms': [
                 'month',
@@ -43,13 +42,12 @@ def test(request):
     try:
         cht = Chart(
             datasource=ds,
-            series_options=
-            [{'options': {
+            series_options=[{'options': {
                 'type': 'line'},
                 'terms': {
                     'month': [
                         'boston_temp']
-                }},
+            }},
                 {'options': {
                     'type': 'pie',
                     'center': [150, 100],
@@ -57,9 +55,8 @@ def test(request):
                     'terms': {
                         'month': [
                             'houston_temp']
-                    }}],
-            chart_options=
-            {'title': {
+                }}],
+            chart_options={'title': {
                 'text': 'Weather Data of Boston (line) and Houston (pie)'}},
             x_sortf_mapf_mts=[(None, monthname, False),
                               (None, monthname, False)])
@@ -81,8 +78,7 @@ def index(request):
     # Step 1: Create a DataPool with the data we want to retrieve.
     weatherdata = \
         DataPool(
-            series=
-            [{'options': {
+            series=[{'options': {
                 'source': MonthlyWeatherByCity.objects.all()},
                 'terms': [
                     'month',
@@ -95,15 +91,14 @@ def index(request):
     # Step 2: Create the Chart object
     cht = Chart(
         datasource=weatherdata,
-        series_options=
-        [{'options': {
+        series_options=[{'options': {
             'type': 'column',
             'stacking': False},
             'terms': {
                 'month': [
                     'boston_temp',
                     'houston_temp', ]
-            }},
+        }},
             {'options': {
                 'type': 'line',
                 'stacking': False},
@@ -111,9 +106,8 @@ def index(request):
                     'month': [
                         'new_york_temp',
                         'san_franciso_temp']
-                }}],
-        chart_options=
-        {'title': {
+            }}],
+        chart_options={'title': {
             'text': u'支持中文吗'},
             'xAxis': {
                 'title': {
@@ -162,8 +156,7 @@ def pie(request, top_n=10):
                 }
             },
         ],
-        chart_options=
-        {
+        chart_options={
             'chart': {
                 'height': 600,
             },
@@ -332,8 +325,7 @@ def create_err_stat_pie(top_n):
                 }
             },
         ],
-        chart_options=
-        {
+        chart_options={
             'chart': {
                 'height': 600,
             },
@@ -355,6 +347,7 @@ def create_err_stat_pie(top_n):
         x_sortf_mapf_mts=(None, err_map, True)
     )
     return cht
+
 
 def fail_state(request, top_n):
     FailedStat.objects.all().delete()

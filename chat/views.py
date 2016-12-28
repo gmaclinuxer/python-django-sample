@@ -11,6 +11,7 @@ from redis import Redis
 
 from .models import Item
 from .utils import render_json
+from alg.sort import bubble_sort, sort_print
 
 # redis = Redis(host=os.environ['REDIS_PORT_6379_TCP_ADDR'],
 #              port=os.environ['REDIS_PORT_6379_TCP_PORT'],
@@ -23,22 +24,28 @@ redis = Redis(host='localhost',
 def sleep_test(seconds):
     time.sleep(seconds)
 
+
+from debug_toolbar_line_profiler import profile_additional
+
 # password='redis')
 # @cache_page(30)
 # @vary_on_cookie
 # @vary_on_headers('User-Agent', 'Cookie')
+@profile_additional(sort_print)
 def home(request):
     if request.method == 'POST':
         Item.objects.create(text=request.POST['item_text'])
         return redirect('/')
     items = Item.objects.all()
     sleep_test(1)
+    sort_print(bubble_sort)
     counter = redis.incr('counter')
     return render(request, 'home.html', {'items': items, 'counter': counter})
 
+
 def index(request):
-        Item.objects.create(text=request.POST['item_text'])
-        if request.method == 'POST':
+    Item.objects.create(text=request.POST['item_text'])
+    if request.method == 'POST':
         return redirect('/')
     items = Item.objects.all()
     counter = redis.incr('counter')
@@ -64,9 +71,6 @@ def task_caller(request, task_name):
     if task_name == 'task_B':
         from .tasks import task_B
         apply_info = task_B.apply_async(args=[1, 2], kwargs={'kwarg1': 'a', 'kwarg2': 'b'})
-        # apply_info = task_B.apply_async(args=[1, 2], kwargs={'kwarg1': 'a', 'kwarg2': 'b'}, countdown=10)
-        # apply_info = task_B.apply_async(args=[1, 2], kwargs={'kwarg1': 'a', 'kwarg2': 'b'}, countdown=10, expires=1)
-        # apply_info = task_B.apply_async(args=[1, 2], kwargs={'kwarg1': 'a', 'kwarg2': 'b'}, eta=datetime.now() + timedelta(seconds=10))
     if task_name == 'task_period':
         from .tasks import task_period
         apply_info = task_period.apply_async(args=[])
