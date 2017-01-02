@@ -49,7 +49,7 @@ def index(request):
         return redirect('/')
     items = Item.objects.all()
     counter = redis.incr('counter')
-    return render(request, 'home.html', {'items': item, 'counter': counter})
+    return render(request, 'home.html', {'items': items, 'counter': counter})
 
 
 def celery_hello(request):

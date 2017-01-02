@@ -374,7 +374,7 @@ TEMPLATE_DEBUG = DEBUG
 # logging
 # ==============================================================================
 BK_LOG_DIR = os.environ.get('BK_LOG_DIR', '/data/paas/apps/logs/')
-LOGGING_DIR = os.path.join(BASE_DIR, 'logs', APP_ID)
+LOGGING_DIR = os.path.join('./logs', APP_ID)
 LOG_CLASS = 'logging.handlers.RotatingFileHandler'
 if RUN_MODE == 'DEVELOP':
     LOG_LEVEL = 'DEBUG'
