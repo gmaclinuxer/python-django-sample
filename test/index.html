@@ -1,0 +1,303 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta name="Keywords" content="sys_epoll,/dev/epoll,sys_poll,linux,kernel">
+   <title>Comparison of Performance of Different poll implementations</title>
+</head>
+<body text="#3333FF" bgcolor="#FFFFFF" link="#3333FF" vlink="#551A8B"
+alink="#FF0000"><br><br>
+<center><h2><tt>epoll Scalability Web Page</tt></h2></center>
+<p><tt>
+<ul>
+<li> <a href="#intro">Introduction</a></li>
+<li> <a href="#ifacedesc">Interface Description</a></li>
+<li> <a href="#man">Man Pages</a></li>
+<li> <a href="#testing">Testing</a></li>
+<li> <a href="#dphttpd">dphttpd</a></li>
+<li> <a href="#dphsmpres">dphttpd SMP results</a></li>
+<li> <a href="#dphupres">dphttpd UP results</a></li>
+<li> <a href="#pipetest">pipetest</a></li>
+<li> <a href="#pipetestres">pipetest results</a></li>
+<li> <a href="#compare">Recent comparison results</a> </li>
+<li> <a href="#conc">Analysis and Conclusions</a></li>
+<li> <a href="#ack">Acknowledgements</a></li>
+</ul>
+</tt></p>
+<a name="intro"><center><h2><tt>Introduction</tt></h2></center></a>
+<p><tt><a href="mailto:davidel@xmailserver.org">Davide Libenzi</a> wrote an event poll 
+implementation and described it at <a href="http://www.xmailserver.org/linux-patches/nio-improve.html">
+the /dev/epoll home page here.</a> His performance testing led to the
+conclusion that epoll scaled linearly regardless of the load as defined
+by the number of dead connections. However, the main hindrance to having
+epoll accepted into the mainline Linux kernel by Linus Torvalds was 
+the interface to epoll being in /dev. Therefore, a new interface to epoll
+was added via three new system calls. That interface will hereafter be referred to
+as sys_epoll. 
+<a href="http://www.xmailserver.org/linux-patches/nio-improve.html#patches">
+Download sys_epoll here.</a></tt></p><br>
+<p>
+
+<a name="ifacedesc"><center><h2><tt> sys_epoll Interface </tt></h2></center></a><br>
+<ul>
+<li><tt> int epoll_create(int maxfds);</tt><br><br>
+
+<p><tt>The system call epoll_create() creates a sys_epoll "object" by allocating
+space for "maxfds" descriptors to be polled. The sys_epoll "object" is referenced by a
+file descriptor, and this enables the new interface to :</tt></p>
+
+<p><tt>
+<ul>
+<li>Maintain compatibility with the existing interface</li>
+<li>Avoid the creation of a epoll_close() syscall</li>
+<li>Reuse 95% of the existing code</li>
+<li>Inherit the file* automatic clean up code</li></ul></tt></p></li>
+
+<li><tt> int epoll_ctl(int epfd, int op, int fd, unsigned int events);</tt><br><br>
+
+<p><tt>The system call epoll_ctl() is the controller interface. The "op" parameter 
+is either EP_CTL_ADD, EP_CTL_DEL or EP_CTL_MOD. The parameter "fd" is the target 
+of the operation. The last parameter, "events", is used in both EP_CTL_ADD and EP_CTL_MOD 
+and represents the event interest mask. </tt></p></li>
+
+<li><tt> int epoll_wait(int epfd, struct pollfd * events, int maxevents, int timeout);
+</tt><br><br>
+<p><tt>The system call epoll_wait() waits for events by
+allowing a maximum timeout, "timeout", in milliseconds and returns the number of events 
+( struct pollfd ) that the caller will find available at "*events".  </tt></p></li></ul>
+</tt></p>
+<a name="man"><center><h2><tt> sys_epoll Man Pages </h2></tt></center></a>
+<ul>
+<li> Postscript : <ul>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll.ps">epoll.ps</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_create.ps">epoll_create.ps</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_ctl.ps">epoll_ctl.ps</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_wait.ps">epoll_wait.ps</a><br></li>
+</ul><li> ASCI Text : <ul>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll.txt">epoll.txt</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_create.txt">epoll_create.txt</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_ctl.txt">epoll_ctl.txt</a><br></li>
+<li><a href="http://www.xmailserver.org/linux-patches/epoll_wait.txt">epoll_wait.txt</a><br></li></ul></ul>
+
+<a name="testing"><center><h2><tt> Testing </tt> </h2></center></a>
+<p><tt> We tested using two applications: <ul><li> dphttpd </li>
+<li>pipetest</li></ul> 
+<a name="dphttpd"><center><h2><tt> dphttpd </tt></h2></center></a>
+<h2><tt> Software </tt></h2>
+<p><tt> The http client is httperf from David Mosberger. 
+<a href="http://www.hpl.hp.com/personal/David_Mosberger/httperf.html">Download httperf here.</a> 
+The http server is dphttpd from Davide Libenzi. 
+<a href="http://www.xmailserver.org/linux-patches/ephttpd-0.1.tar.gz">Download dphttpd here.</a> 
+The deadconn client is also provided by Davide Libenzi. 
+<a href="http://www.xmailserver.org/linux-patches/deadconn_last.c">Download deadconn here.</a></tt></p> 
+<p><tt>
+Two client programs (deadconn_last and httperf) run on the client
+machine and establish connections to the HTTP server (dphttpd) running on
+the server machine. Connections established by deadconn_last are "dead".
+These send a single HTTP get request at connection setup and remain idle
+for the remainder of the test. Connections established by httperf are
+"active". These continuously send HTTP requests to the server at a
+fixed rate. httperf reports the rate at which the HTTP server
+replies to its requests. This reply rate is the metric reported on the
+Y-axis of the graphs below.</tt></p>
+
+<p><tt>For the tests, the number of active connections is kept constant and the
+number of dead connections increased from 0 to 60000 (X-axis of graphs
+below). Consequently, dphttpd spends a fixed amount of time responding to
+requests and a variable amount of time looking for requests to
+service. The mechanism used to look for active connections amongst all
+open connections is one of standard poll(), /dev/epoll or sys_epoll. As
+the number of dead connections is increased, the scalability of these
+mechanisms starts impacting dphttpd's reply rate, measured by
+httperf.</tt></p>
+<h2><tt> dphttpd SMP </tt></h2>
+<h2><tt> Server </tt></h2>
+<p><tt>
+<ul>
+<li> Hardware: 8-way PIII Xeon 700MHz, 2.5 GB RAM, 2048 KB L2 cache</li>
+<li> OS  : RedHat 7.3 with 2.5.44 kernel, patched with ONE of:</li>
+<ul><li> sys_epoll-2.5.44-0.9.diff 
+<a href="http://www.xmailserver.org/linux-patches/sys_epoll-2.5.44-0.9.diff">
+To reproduce download here.</a><br>
+<a
+href="http://www.xmailserver.org/linux-patches/nio-improve.html#patches">
+To run the latest sys_epoll patch download here. </a> </li>
+<li>      ep_patch-2.5.44-0.32.diff
+<a href="http://www.xmailserver.org/linux-patches/ep_patch-2.5.44-0.32.diff">
+Download /dev/epoll</a></li>
+<li>        unpatched kernel 
+<a href="http://www.kernel.org/pub/linux/kernel/v2.5/linux-2.5.44.tar.gz">
+Download 2.5.44.</a></li></ul></li>
+       <li>/proc/sys/fs/file-max = 131072</li>
+     <li>/proc/sys/net/ipv4/tcp_fin_timeout = 15</li>
+     <li>/proc/sys/net/ipv4/tcp_max_syn_backlog = 16384</li>
+     <li>/proc/sys/net/ipv4/tcp_tw_reuse = 1</li>
+      <li>/proc/sys/net/ipv4/tcp_tw_recycle = 1</li>
+      <li>/proc/sys/net/ipv4/ip_local_port_range = 1024 65535</li>
+    <li># ulimit -n 131072</li>
+    <li># dphttpd --maxfds 20000 --stksize 4096</li>
+          <li> default size of reply = 128 bytes</li></ul>
+</tt></p>
+
+<h2><tt> Client  </tt></h2>
+<p><tt>
+<ul>
+<li> Hardware: 4-way PIII Xeon 500MHz, 3 GB RAM, 512 KB L2 cache</li>
+<li>    OS  : RedHat 7.3 with 2.4.18-3smp kernel</li>
+<li>   /proc/sys/fs/file-max = 131072</li>
+   <li>/proc/sys/net/ipv4/tcp_fin_timeout = 15</li>
+<li>/proc/sys/net/ipv4.tcp_tw_recycle = 1</li>
+<li>/proc/sys/net/ipv4.tcp_max_syn_backlog = 16384</li>
+<li>/proc/sys/net/ipv4.ip_local_port_range = 1024 65535</li>
+      <li> # ulimit -n 131072</li>
+   <li> # deadconn_last $SERVER $SVRPORT num_connections <br>
+        where num_connections is one of 0, 50, 100, 200, 400, 800,
+        1000, 5000, 10000, 15000, 20000, 25000, 30000, 35000, 40000, 45000, 50000, 55000, 60000.</li>
+
+<li>    After deadconn_last reports num_connections established   <br>
+    # httperf  --server=$SERVER --port=$SVRPORT --think-timeout 5 
+      --timeout 5  --num-calls 20000 --num-conns 100 --hog --rate 100</li></ul>
+</tt></p>
+
+<a name="dphsmpres"><h2><tt> Results for dphttpd SMP  </tt></h2></a>
+
+<center><img SRC="dph-smp.png" height=480 width=640></center>
+
+<h2><tt> dphttpd UP </tt></h2>
+<h2><tt> Server  </tt></h2>
+<p><tt>
+<ul>
+<li> 1-way PIII, 866MHz, 256 MB RAM </li>
+<li> OS: 2.5.44 gcc 2.96 (RedHat 7.3)</li>
+<li>/proc/sys/fs/file-max = 65536</li>
+     <li>/proc/sys/net/ipv4/tcp_fin_timeout = 15</li>
+      <li>/proc/sys/net/ipv4/tcp_tw_recycle = 1</li>
+    <li># ulimit -n 65536</li>
+    <li># dphttpd --maxfds 20000 --stksize 4096</li>
+          <li> default size of reply = 128 bytes</li></ul>
+
+</ul>
+</tt></p>
+<h2><tt> Client  </tt></h2>
+<p><tt>
+<ul>
+<li> 1-way PIII, 866MHz, 256 MB RAM </li>
+<li> OS: 2.4.18, gcc 2.96 (RedHat 7.3)</li>
+<li>   /proc/sys/fs/file-max = 65536</li>
+   <li>/proc/sys/net/ipv4/tcp_fin_timeout = 15</li>
+<li>/proc/sys/net/ipv4.tcp_tw_recycle = 1</li>
+      <li> # ulimit -n 65536</li>
+   <li> # deadconn_last $SERVER $SVRPORT num_connections <br>
+        where num_connections is one of 0, 50, 100, 200, 400, 800,
+        1000, 2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000.</li>
+
+<li>    After deadconn_last reports num_connections established   <br>
+    # httperf  --server=$SERVER --port=$SVRPORT --think-timeout 5
+      --timeout 5  --num-calls 20000 --num-conns 100 --hog --rate 100</li>
+
+</ul>
+</tt></p>
+<h2><tt> Results for dphttpd UP </tt></h2>
+<a name="dphupres"><center><img SRC="dph-up.png" height=480 width=640></center></a>
+<br><br>
+
+<a name="pipetest"><center><h2><tt> Pipetest </tt></h2></center></a>
+<p><tt> David Stevens added support for sys_epoll to Ben LaHaise's original
+pipetest.c application. 
+<a href="http://www.kvack.org/~blah/ols2002.tar.gz">
+Download Ben LaHaise's Ottawa Linux Symposium 2002 paper including pipetest.c here.</a> 
+<a href="http://prdownloads.sourceforge.net/lse/sys_epoll-pipetest.patch?download">
+Download David Steven's patch to add sys_epoll to pipetest.c
+here.</a></tt></p><br>
+<h2><tt> Pipetest SMP  </tt></h2>
+<h2><tt>System and Configuration  </tt></h2>
+<p><tt> <ul>
+<li> 8-way PIII Xeon 900MHz, 4 GB RAM, 2048 KB L2 cache</li>
+<li>OS: RedHat 7.2 with 2.5.44 kernel, patched with one of:</li>
+<ul> <li>sys_epoll-2.5.44-0.9.diff
+<a href="http://www.xmailserver.org/linux-patches/sys_epoll-2.5.44-0.9.diff">
+To reproduce download here.</a><br>
+<a href="http://www.xmailserver.org/linux-patches/nio-improve.html#patches">
+To run the latest sys_epoll patch download here. </a></li>
+<li>async poll ported to 2.5.44 <a href="http://prdownloads.sourceforge.net/lse/aiopoll-2.5.44-1.patch?download">download here</a>.</li></ul></li>
+<li>/proc/sys/fs/file-max = 65536</li>
+<li># ulimit -n 65536</li>
+<li># pipetest [poll|aio-poll|sys-epoll] num_pipes message_threads max_generation</li><ul>
+<li>where num_pipes is one of 10, 100, 500, or 1000-16000 in increments of 1000</li>
+<li>message_threads is 1</li>
+<li>max_generantion is 300</li></ul>
+</li></ul>
+</tt></p>
+
+<a name="pipetestres"><h2><tt> Results for pipetest on an SMP </tt></h2></a>
+<center><img SRC="ppt-smp.png" height=480 width=640></center>
+
+<h2><tt> Results for Pipetest on a UP  </tt></h2>
+<p><tt> Same Hardware and Configuration as with the SMP pipetest above
+<br>
+with CONFIG_SMP = n being the only change.</tt></p>
+<center><img SRC="ppt-up.png" height=480 width=640></center>
+
+<a name="compare"><center><h2><tt> sys_epoll stability comparisons Oct 30, 2002 
+</tt></h2></center><br></a>
+<p><tt> Following are performance results comparing version 0.14 of the
+<a href="http://www.xmailserver.org/linux-patches/sys_epoll-2.5.44-0.14.diff">
+(Download v0.14 here)</a>
+to the version, v0.9, originally used for the performance
+testing outlined above.
+<a
+href="http://www.xmailserver.org/linux-patches/sys_epoll-2.5.44-0.9.diff">
+(Download v0.9 here)</a>
+Testing was done using two measures: <a href="#pipetest">
+pipetest details here.</a> and <a href="#dphttpd"> dphttpd details
+here.</a>.
+<br>
+<center><img SRC="ppt-compare.png" height=480 width=640></center>
+<center><img SRC="dph-compare.png" height=480 width=640></center>
+</tt></p>
+
+
+<a name="conc"><center><h2><tt> Analysis and Conclusion </tt></h2></center></a>
+<p><tt> The system call interface to epoll performs as well as the /dev interface
+to epoll. In addition sys_epoll scales better than poll and AIO poll for large numbers 
+of connections.  Other points in favour of sys_epoll are:</tt></p>
+<p><tt><ul>
+
+<li>sys_epoll is compatible with synchronous read() and write() and thus makes 
+it usable with existing libraries that have not migrated to AIO. </li>
+
+<li>Applications using poll() can be easily migrated to sys_epoll while 
+continuing to use the existing I/O infrastructure. </li>
+<li> sys_epoll will be invisible to people who don't want to use it. </li>
+<li>sys_epoll has a low impact on the existing source code.  </li>
+<pre><tt>
+arch/i386/kernel/entry.S  |    4
+fs/file_table.c           |    4
+fs/pipe.c                 |   36 +
+include/asm-i386/poll.h   |    1
+include/asm-i386/unistd.h |    3
+include/linux/fs.h        |    4
+include/linux/list.h      |    5
+include/linux/pipe_fs_i.h |    4
+include/linux/sys.h       |    2
+include/net/sock.h        |   12
+net/ipv4/tcp.c            |    4
+</tt></pre>
+</ul></tt></p>
+<p><tt> Due to these factors sys_epoll should be seriously considered for
+inclusion in the mainline Linux kernel.</tt> </p>
+
+<a name="ack"><center><h2><tt> Acknowledgments </tt></h2></center></a>
+<p><tt>
+Thank You to: 
+<a href="mailto:davidel@xmailserver.org">Davide Libenzi</a> 
+Who wrote /dev/epoll, sys_epoll and dphttpd.<br>
+ He was an all around great guy to work with.<br> 
+Also Thanks to the following people who helped with testing and this web
+site:  <br>
+<a href="mailto:nagar@watson.ibm.com">Shailabh Nagar</a>, 
+<a href="mailto:plars@austin.ibm.com">Paul Larson</a> , 
+<a href="mailto:hannal@us.ibm.com">Hanna Linder</a>, and 
+<a href="mailto:dlstevens@us.ibm.com">David Stevens.</a>  
+</tt><br> </p><br><br><br>
+</body>
+</html>
