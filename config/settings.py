@@ -541,7 +541,7 @@ DEBUG_TOOLBAR_PANELS = [
 
 DEBUG_TOOLBAR_CONFIG = {
     # Toolbar options
-    # 'JQUERY_URL': '%s%s' % (STATIC_URL, 'js/jquery-1.10.2.min.js'),
+    'JQUERY_URL': '%s%s' % (STATIC_URL, 'jquery.min.js'),
     # Panel options
     # 'DISABLE_PANELS': ['debug_toolbar.panels.cache.CachePanel'],
     'SQL_WARNING_THRESHOLD': 100,   # milliseconds
@@ -549,4 +549,4 @@ DEBUG_TOOLBAR_CONFIG = {
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 
 # The Debug Toolbar is shown only if your IP is listed in the INTERNAL_IPS setting.
-INTERNAL_IPS = ("localhost", '127.0.0.1')
+INTERNAL_IPS = ("localhost", "127.0.0.1")
