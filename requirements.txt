@@ -1,4 +1,6 @@
 Django==1.8.11
+Mako==1.0.4
+MarkupSafe==0.23
 gunicorn==19.3.0
 mysql-python
 redis==2.10.3
