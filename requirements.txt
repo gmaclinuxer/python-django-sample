@@ -1,14 +1,15 @@
 Django==1.8.3
 Mako==1.0.1
 MarkupSafe==0.23
+celery==3.1.18
+django-celery==3.1.16
 gunicorn==19.3.0
 mysql-python
 redis==2.10.3
 django-highchartit
 requests_toolbelt==0.7.0
 fabric==1.13.1
+paramiko
 pexpect==4.2.1
-celery==3.1.18
-django-celery==3.1.16
 sqlparse
 line_profiler
