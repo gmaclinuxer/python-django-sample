@@ -40,6 +40,8 @@ try:
                 if EOL1 in reqs[fileno] or EOL2 in reqs[fileno]:
                     # modify writable
                     epoll.modify(fileno, select.EPOLLOUT)
+                    # ab -n 10000 http://localhost:8000
+                    # comment next line when do ab test
                     print '*' * 40 + '\n' + reqs[fileno].decode()[:-2]
             elif event & select.EPOLLOUT:
                 bytes_written = cons[fileno].send(resps[fileno])
