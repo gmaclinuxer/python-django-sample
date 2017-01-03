@@ -1,5 +1,5 @@
-Django==1.8.11
-Mako==1.0.4
+Django==1.8.3
+Mako==1.0.1
 MarkupSafe==0.23
 gunicorn==19.3.0
 mysql-python

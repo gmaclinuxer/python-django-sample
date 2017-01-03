@@ -13,6 +13,7 @@ Vagrant.configure("2") do |config|
   # Every Vagrant development environment requires a box. You can search for
   # boxes at https://atlas.hashicorp.com/search.
   config.vm.box = "base"
+  #config.vm.box = "ubuntu"
 
   # Disable automatic box update checking. If you disable this, then
   # boxes will only be checked for updates when the user runs
@@ -22,7 +23,7 @@ Vagrant.configure("2") do |config|
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine. In the example below,
   # accessing "localhost:8080" will access port 80 on the guest machine.
-  config.vm.network "forwarded_port", guest: 8000, host: 8000
+  config.vm.network "forwarded_port", guest: 8888, host: 8888
 
   # Create a private network, which allows host-only access to the machine
   # using a specific IP.
@@ -65,9 +66,9 @@ Vagrant.configure("2") do |config|
   # Puppet, Chef, Ansible, Salt, and Docker are also available. Please see the
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
-     sudo cp /vagrant/ubuntu-https-4-trusty  /etc/apt/sources.list
+     #sudo cp /vagrant/ubuntu-https-4-trusty  /etc/apt/sources.list
      sudo apt-get update
-     sudo apt-get install python-pip libmysqlclient-dev libssl-dev python2.7-dev libffi-dev
+     sudo apt-get install python-pip libmysqlclient-dev libssl-dev python2.7-dev libffi-dev -y
      sudo pip install -r /vagrant/requirements.txt
    SHELL
 end

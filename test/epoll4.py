@@ -14,17 +14,18 @@ server_socket.listen(1)
 # non-block mode
 server_socket.setblocking(0)
 
-# create epoll object and register level trigger epoll fd
+# create epoll object
 epoll = select.epoll()
-epoll.register(server_socket.fileno(), select.EPOLLIN | select.EPOLLLT)
+epoll.register(server_socket.fileno(), select.EPOLLIN | select.EPOLLET)
 
 try:
     cons, reqs, resps = {}, {}, {}
     while True:
-        events = epoll.poll(1)
+        events = epoll.poll()
         for fileno, event in events:
             # client connect event
             if fileno == server_socket.fileno():
+
                 client_socket, address = server_socket.accept()
                 # non-block mode
                 client_socket.setblocking(0)
@@ -34,14 +35,18 @@ try:
                 cons[client_socket.fileno()] = client_socket
                 reqs[client_socket.fileno()] = b''
                 resps[client_socket.fileno()] = response
+
             elif event & select.EPOLLIN:
+
                 reqs[fileno] += cons[fileno].recv(1024)
                 # finish read
                 if EOL1 in reqs[fileno] or EOL2 in reqs[fileno]:
                     # modify writable
                     epoll.modify(fileno, select.EPOLLOUT)
-                    print '*' * 40 + '\n' + reqs[fileno].decode()[:-2]
+                    # print '*' * 40 + '\n' + reqs[fileno].decode()[:-2]
+
             elif event & select.EPOLLOUT:
+
                 bytes_written = cons[fileno].send(resps[fileno])
                 resps[fileno] = resps[fileno][bytes_written:]
                 # finish write
@@ -49,6 +54,7 @@ try:
                     # disable interest in further read or write events
                     epoll.modify(fileno, 0)
                     cons[fileno].shutdown(socket.SHUT_RDWR)
+
             elif event & select.EPOLLHUP:
                 # client shutdown connection first
                 epoll.unregister(fileno)
