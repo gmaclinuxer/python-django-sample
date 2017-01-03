@@ -16,7 +16,7 @@ server_socket.setblocking(0)
 
 # create epoll object and register level trigger epoll fd
 epoll = select.epoll()
-epoll.register(server_socket.fileno(), select.EPOLLIN | select.EPOLLLT)
+epoll.register(server_socket.fileno(), select.EPOLLIN)
 
 try:
     cons, reqs, resps = {}, {}, {}
