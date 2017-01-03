@@ -1,28 +1,14 @@
 # coding=utf-8
-from __future__ import print_function
+# from __future__ import print_function
 import socket, select, errno
-import datetime
 import logging
 import json
 import sys
 
-def logto(filename, name=__name__, level=logging.INFO):
-    logger = logging.getLogger(name)
-    logger.setLevel(level)
-    formatter = logging.Formatter(
-        '%(levelname)-.3s [%(asctime)s.%(msecs)03d] %(threadName)-10s %(name)s:%(lineno)03d: %(message)s',
-        '%Y%m%d-%H:%M:%S')
-    file_handler = logging.FileHandler(filename)
-    file_handler.setFormatter(formatter)
-    logger.addHandler(file_handler)
-    if level == logging.DEBUG:
-        stream_handler = logging.StreamHandler(sys.stdout)
-        logger.addHandler(stream_handler)
-    return logger
 
-# 文件日志
-logger = logto('epoll.log')
-
+# ======================================================
+# global settings
+# ======================================================
 DEBUG = False
 back_log = 1024
 EOL1 = b'\n\n'
@@ -32,43 +18,51 @@ response = b''
 # response += b'Content-Type: text/plain\r\nContent-Length: 13\r\n\r\n'
 response += b'Hello, world!'
 
-server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-server_socket.bind(('', 8888))
-server_socket.listen(back_log)
-# non-block mode
-server_socket.setblocking(False)
+# ======================================================
+# log to file
+# ======================================================
+LOG_LEVEL = logging.INFO
+if DEBUG:
+    LOG_LEVEL = logging.DEBUG
+def logto(filename, name=__name__, level=LOG_LEVEL):
+    '''
+    日志格式定义
+    '''
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+    formatter = logging.Formatter(
+        '%(levelname)-.3s [%(asctime)s.%(msecs)03d] %(threadName)-10s %(name)s:%(lineno)03d: %(message)s',
+        '%Y%m%d-%H:%M:%S')
+    file_handler = logging.FileHandler(filename)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-# create epoll object
-epoll = select.epoll()
-epoll.register(server_socket.fileno(), select.EPOLLIN | select.EPOLLET)
+    # show warning/error message direct
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setLevel(logging.WARNING)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+    return logger
 
-print('''
-    epoll           : %s
-    server_socket   : %s
-    server          : %s
-    backlog         : %s
-    debug           : %s
-''' % (epoll.fileno(), server_socket.fileno(), '%s:%s' % server_socket.getsockname(), back_log, DEBUG))
+# global logger
+logger = logto('epoll.log')
 
 # ======================================================
 # overwrite buildin functions
 # ======================================================
-try:
-    import __builtin__
-except ImportError:
-    import buildins as __build_in__
-
-if DEBUG is False:
-    def print(*args, **kwargs):
-        '''
-        custom print
-        '''
-        # __builtin__.print('custom print')
-        # return __builtin__.print(*args, **kwargs)
-        pass
-
-
+# try:
+#     import __builtin__
+# except ImportError:
+#     import buildins as __build_in__
+#
+# if DEBUG is False:
+#     def print(*args, **kwargs):
+#         '''
+#         custom print
+#         '''
+#         # __builtin__.print('custom print')
+#         # return __builtin__.print(*args, **kwargs)
+#         pass
 
 # ======================================================
 # tools
@@ -79,6 +73,7 @@ def trans_event(event_no):
         select.EPOLLOUT: 'writable',
         select.EPOLLHUP: 'disconnect'
     }.get(event_no)
+
 
 def update_stat(stats, fd, k, v=None):
     '''
@@ -91,18 +86,41 @@ def update_stat(stats, fd, k, v=None):
     else:
         socket_file[k] = v
 
-STAT_DEFAULT = {'epoll_in': 0, 'epoll_out': 0, 'send_close': 0, 'recv_close': 0, 'recv_empty': 0}
 # ======================================================
 # epoll server
 # ======================================================
+server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+server_socket.bind(('', 8888))
+server_socket.listen(back_log)
+# non-block mode
+server_socket.setblocking(False)
+
+# create epoll object
+epoll = select.epoll()
+epoll.register(server_socket.fileno(), select.EPOLLIN | select.EPOLLET)
+
+print '''
+    epoll           : %s
+    server_socket   : %s
+    server          : %s
+    backlog         : %s
+    debug           : %s
+''' % (
+    epoll.fileno(),
+    server_socket.fileno(),
+    '%s:%s' % server_socket.getsockname(),
+    back_log,
+    DEBUG
+)
+
 try:
     cons, reqs, resps, stats = {}, {}, {}, {}
-    cnt = 0
     while True:
         events = epoll.poll(10)
-        # print('------epoll.poll------\r\n')
+        logger.debug('------epoll.poll------\n')
         for fileno, event in events:
-            # print('%s: fd: %s, event: %s' % (datetime.datetime.now(), fileno, trans_event(event)))
+            logger.debug('fd: %s, event: %s\n', fileno, trans_event(event))
             # client connect event
             if fileno == server_socket.fileno():
                 try:
@@ -121,9 +139,7 @@ try:
                             'epoll_in': 0, 'epoll_out': 0, 'send_close': 0, 'recv_close': 0, 'recv_empty': 0
                         }
                 except socket.error as e:
-                    print('%s: EPOLLIN-accept: %s, EAGAIN: %s, client: %s' % (
-                        datetime.datetime.now(), e.errno, errno.EAGAIN, fileno))
-                    pass
+                    logger.debug('EPOLLIN-accept: %s, EAGAIN: %s, client: %s' % (e.errno, errno.EAGAIN, fileno))
             elif event & select.EPOLLIN:
                 try:
                     while True:
@@ -141,10 +157,19 @@ try:
                             # epoll.modify(fileno, 0)
                             epoll.modify(fileno, select.EPOLLET)
                             cons[fileno].shutdown(socket.SHUT_RDWR)
-                            logger.info('%s: ***recv_empty->shutdown: %s***' % (datetime.datetime.now(), fileno))
+                            logger.warning('***recv_empty->close: %s***' % fileno)
                 except socket.error as e:
-                    print('%s: EPOLLIN: %s, EAGAIN: %s' % (datetime.datetime.now(), e.errno, errno.EAGAIN))
-                    pass
+                    if e.errno in [errno.EAGAIN]:
+                        logger.debug('EPOLLIN: %s, EAGAIN: %s' % (e.errno, errno.EAGAIN))
+                    else:
+                        # socket.error: [Errno 107] Transport endpoint is not connected
+                        try:
+                            logger.warning('***%s->shutdown: %s***' % (fileno, e))
+                            # epoll.modify(fileno, 0)
+                            epoll.modify(fileno, select.EPOLLET)
+                            cons[fileno].shutdown(socket.SHUT_RDWR)
+                        except Exception as close_error:
+                            logger.error('***%s->error: %s***' % (fileno, close_error))
 
                 # finish read
                 if EOL1 in reqs[fileno] or EOL2 in reqs[fileno]:
@@ -159,8 +184,7 @@ try:
                         resps[fileno] = resps[fileno][bytes_written:]
                         update_stat(stats, fileno, 'epoll_out')
                 except socket.error as e:
-                    print('%s: EPOLLOUT: %s, EAGAIN: %s' % (datetime.datetime.now(), e.errno, errno.EAGAIN))
-                    pass
+                    logger.debug('EPOLLOUT: %s, EAGAIN: %s' % (e.errno, errno.EAGAIN))
 
                 # finish write
                 if len(resps[fileno]) == 0:
@@ -177,7 +201,7 @@ try:
 
             elif event & select.EPOLLHUP:
                 # client close connection
-                print('%s: EPOLLHUP-%s' % (datetime.datetime.now(), fileno))
+                logger.debug('EPOLLHUP-%s' % fileno)
                 update_stat(stats, fileno, 'recv_close')
                 epoll.unregister(fileno)
                 cons[fileno].close()
@@ -185,11 +209,11 @@ try:
                 # if fileno in reqs:
                 #     del reqs[fileno]
 except KeyboardInterrupt:
-    logger.info('-'*50 + '\n')
+    logger.info('-' * 50 + '\n')
     logger.info(cons)
     logger.info(json.dumps(reqs, indent=2))
     logger.info(json.dumps(stats, indent=2))
-    logger.info('\n' + '-'*50)
+    logger.info('\n' + '-' * 50)
 finally:
     epoll.unregister(server_socket.fileno())
     epoll.close()
