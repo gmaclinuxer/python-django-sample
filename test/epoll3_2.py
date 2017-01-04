@@ -14,6 +14,7 @@ server_socket.bind(('0.0.0.0', 8888))
 server_socket.listen(back_log)
 # non-block mode
 server_socket.setblocking(0)
+server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
 # create epoll object and register level trigger epoll fd
 epoll = select.epoll()
@@ -57,6 +58,7 @@ try:
                 if EOL1 in reqs[fileno] or EOL2 in reqs[fileno]:
                     # modify writable
                     epoll.modify(fileno, select.EPOLLOUT)
+                    cons[fileno].setsockopt(socket.IPPROTO_TCP, socket.TCP_CORK, 1)
                     # ab -n 10000 http://localhost:8000
                     # comment next line when do ab test
                     # print '*' * 40 + '\n' + reqs[fileno].decode()[:-2]
@@ -67,6 +69,7 @@ try:
                 if len(resps[fileno]) == 0:
                     # disable interest in further read or write events
                     epoll.modify(fileno, 0)
+                    cons[fileno].setsockopt(socket.IPPROTO_TCP, socket.TCP_CORK, 0)
                     # epoll.unregister(fileno)
                     # cons[fileno].close()
                     # del cons[fileno]
@@ -79,7 +82,6 @@ try:
                 # print 'fd: %s' % fileno
                 del reqs[fileno]
 except KeyboardInterrupt:
-    print cons
     print reqs
 finally:
     epoll.unregister(server_socket.fileno())
