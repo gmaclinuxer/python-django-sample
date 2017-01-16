@@ -20,9 +20,18 @@ from datetime import timedelta
 # schedules task config
 from celery.schedules import crontab
 
+# ==============================================================================
+# Django 项目配置
+# ==============================================================================
+APP_ID = 'django_docker'
+PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT, PROJECT_MODULE_NAME = os.path.split(PROJECT_PATH)
+BASE_DIR = os.path.dirname(os.path.dirname(PROJECT_PATH))
+
+
 TIME_ZONE = 'Asia/Shanghai'
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 # Quick-start development settings - unsuitable for production
@@ -287,6 +296,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
 
+STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
 STATIC_URL = '/static/'
 
 # List of finder classes that know how to find static files in
@@ -340,14 +350,6 @@ try:
 except ImportError:
     pass
 
-
-# ==============================================================================
-# Django 项目配置
-# ==============================================================================
-APP_ID = 'django_docker'
-PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
-PROJECT_ROOT, PROJECT_MODULE_NAME = os.path.split(PROJECT_PATH)
-BASE_DIR = os.path.dirname(os.path.dirname(PROJECT_PATH))
 
 # ==============================================================================
 # 应用运行环境配置信息
