@@ -26,12 +26,12 @@ from celery.schedules import crontab
 APP_ID = 'django_docker'
 PROJECT_PATH = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT, PROJECT_MODULE_NAME = os.path.split(PROJECT_PATH)
-BASE_DIR = os.path.dirname(os.path.dirname(PROJECT_PATH))
+# BASE_DIR = os.path.dirname(os.path.dirname(PROJECT_PATH))
 
 
 TIME_ZONE = 'Asia/Shanghai'
 
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 
 # Quick-start development settings - unsuitable for production
@@ -53,6 +53,8 @@ INSTALLED_APPS = (
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
+    # Using WhiteNoise in development
+    'whitenoise.runserver_nostatic',
     'django.contrib.staticfiles',
     # 'gunicorn',
     'chat',
@@ -64,6 +66,8 @@ INSTALLED_APPS = (
     'debug_toolbar_line_profiler',
 )
 
+WHITENOISE_MAX_AGE = 30
+# WHITENOISE_STATIC_PREFIX = '/static/'
 # ===============================================================
 # # celery configuration
 INSTALLED_APPS += ("djcelery",)
@@ -217,6 +221,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
     # 'django.middleware.cache.FetchFromCacheMiddleware',
     'debug_toolbar.middleware.DebugToolbarMiddleware',
 )
@@ -293,11 +298,47 @@ USE_L10N = True
 
 USE_TZ = True
 
+# # ===============================================================================
+# # 静态资源设置
+# # ===============================================================================
+# # 静态资源文件(js,css等）在应用上线更新后, 由于浏览器有缓存, 可能会造成没更新的情况.
+# # 所以在引用静态资源的地方，都需要加上这个版本号，如：<script src="/a.js?v=${STATIC_VERSION}"></script>；
+# # 如果静态资源修改了以后，上线前修改这个版本号即可
+# STATICFILES_DIRS = (
+#     os.path.join(PROJECT_ROOT, 'static'),
+# )
+STATIC_VERSION = 2.2
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.8/howto/static-files/
+# ==============================================================================
+# 应用运行环境配置信息
+# ==============================================================================
+ENVIRONMENT = os.environ.get('BK_ENV', 'development')
+# 应用访问路径
+SITE_URL = '/'
+# 运行模式， DEVELOP(开发模式)， TEST(测试模式)， PRODUCT(正式模式)
+RUN_MODE = 'DEVELOP'
+if ENVIRONMENT.endswith('production'):
+    RUN_MODE = 'PRODUCT'
+    DEBUG = False
+    SITE_URL = '/o/%s/' % APP_ID
+elif ENVIRONMENT.endswith('testing'):
+    RUN_MODE = 'TEST'
+    DEBUG = False
+    SITE_URL = '/t/%s/' % APP_ID
+else:
+    RUN_MODE = 'DEVELOP'
+    DEBUG = True
+TEMPLATE_DEBUG = DEBUG
 
 STATIC_ROOT = os.path.join(PROJECT_ROOT, 'staticfiles')
-STATIC_URL = '/static/'
+#
+# ROOT_URLCONF = 'urls'
+
+# 应用本地静态资源目录
+STATIC_URL = '%sstatic/' % SITE_URL
+
 
 # List of finder classes that know how to find static files in
 # various locations.
@@ -309,6 +350,10 @@ STATICFILES_FINDERS = (
 STATICFILES_DIRS = (
     os.path.join(BASE_DIR, 'static'),
 )
+
+# Simplified static file serving.
+# https://warehouse.python.org/project/whitenoise/
+STATICFILES_STORAGE = 'whitenoise.django.GzipManifestStaticFilesStorage'
 
 # CACHES = {
 #     'default': {
@@ -352,27 +397,6 @@ except ImportError:
 
 
 # ==============================================================================
-# 应用运行环境配置信息
-# ==============================================================================
-ENVIRONMENT = os.environ.get('BK_ENV', 'development')
-# 应用访问路径
-SITE_URL = '/'
-# 运行模式， DEVELOP(开发模式)， TEST(测试模式)， PRODUCT(正式模式)
-RUN_MODE = 'DEVELOP'
-if ENVIRONMENT.endswith('production'):
-    RUN_MODE = 'PRODUCT'
-    DEBUG = False
-    SITE_URL = '/o/%s/' % APP_ID
-elif ENVIRONMENT.endswith('testing'):
-    RUN_MODE = 'TEST'
-    DEBUG = False
-    SITE_URL = '/t/%s/' % APP_ID
-else:
-    RUN_MODE = 'DEVELOP'
-    DEBUG = True
-TEMPLATE_DEBUG = DEBUG
-
-# ==============================================================================
 # logging
 # ==============================================================================
 BK_LOG_DIR = os.environ.get('BK_LOG_DIR', '/data/paas/apps/logs/')
@@ -387,22 +411,7 @@ elif RUN_MODE == 'PRODUCT':
     LOGGING_DIR = os.path.join(BK_LOG_DIR, APP_ID)
     LOG_LEVEL = 'ERROR'
 
-# # ===============================================================================
-# # 静态资源设置
-# # ===============================================================================
-# # 静态资源文件(js,css等）在应用上线更新后, 由于浏览器有缓存, 可能会造成没更新的情况.
-# # 所以在引用静态资源的地方，都需要加上这个版本号，如：<script src="/a.js?v=${STATIC_VERSION}"></script>；
-# # 如果静态资源修改了以后，上线前修改这个版本号即可
-# STATICFILES_DIRS = (
-#     os.path.join(PROJECT_ROOT, 'static'),
-# )
-STATIC_VERSION = 2.2
-# # 应用本地静态资源目录
-# STATIC_URL = '%sstatic/' % SITE_URL
-#
-# ROOT_URLCONF = 'urls'
-#
-# STATIC_ROOT = os.path.join(PROJECT_ROOT, 'static_root')
+
 # ==============================================================================
 # Templates
 # ==============================================================================
