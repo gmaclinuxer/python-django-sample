@@ -15,3 +15,4 @@ sqlparse
 line_profiler
 whitenoise
 dj_database_url
+psycopg2
