@@ -1,4 +1,4 @@
-Django==1.8.3
+Django==1.8.11
 Mako==1.0.1
 MarkupSafe==0.23
 celery==3.1.18
